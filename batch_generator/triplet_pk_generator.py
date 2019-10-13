@@ -14,21 +14,22 @@ class TripletPKGenerator(BatchGenerator):
 
     def __init__(self,
                  data: pd.DataFrame,
-                 triplet_label: str,
+                 triplet_label,
                  classes_in_batch,
                  samples_per_class,
                  x_structure,
                  y_structure=None
                  ):
+        self.class_ref = None
         self.triplet_label = triplet_label
         self.classes_in_batch = classes_in_batch
         self.sample_per_class = samples_per_class
         self.local_labeler = TripletPKBatchLabeler()
-        triplet_x_structure = self._add_local_labeller(x_structure)
-        self.class_list = data[triplet_label].value_counts()
+        triplet_x_structure = self._add_local_labeller(x_structure, data)
         super().__init__(data, triplet_x_structure, y_structure, shuffle=False)
 
-    def _add_local_labeller(self, x_structure):
+    def _add_local_labeller(self, x_structure, data):
+        self.class_ref = data[self.triplet_label].value_counts()
         ll = (self.triplet_label, self.local_labeler)
         if type(x_structure) == list:
             return x_structure + [ll]
@@ -47,8 +48,7 @@ class TripletPKGenerator(BatchGenerator):
         """
         This method is the core of triplet PK batch generator
         """
-        classes_selected = self.class_list.sample(self.classes_in_batch).index.values
-        batch = self.data.loc[self.data[self.triplet_label].isin(classes_selected), :]
+        classes_selected = self.class_ref.sample(self.classes_in_batch).index.values
         batch = self.data.loc[self.data[self.triplet_label].isin(classes_selected), :].\
             groupby(self.triplet_label).apply(self._select_samples_for_class)
         return batch
