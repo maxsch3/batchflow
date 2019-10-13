@@ -117,4 +117,4 @@ class TestBatchShaper:
         assert len(shape[0]) == 2
         assert shape[0][0] == (None, 3)
         assert shape[0][1] == (None, 4)
-        assert shape[1] == (None, 3)
+        assert shape[1] == (None, )

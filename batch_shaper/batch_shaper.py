@@ -84,42 +84,29 @@ class BatchShaper:
             raise KeyError('Error: column {} was not found in data provided'.format(leaf[0]))
 
     def __transform_func(self, data, leaf):
-        x = self.__call_transformer(data, leaf, 'transform')
-        return x
-
-    def __call_transformer(self, data, leaf, function_name):
-        self.__check_leaf(data, leaf, function_name)
-        if not hasattr(leaf[1], function_name):
+        self.__check_leaf(data, leaf, 'transform')
+        if not hasattr(leaf[1], 'transform'):
             raise ValueError('Error: transformer of class {} provided in structure definition has no '
-                             ' \'{}\' method'.format(type(leaf[1]).__name__, function_name))
+                             ' \'{}\' method'.format(type(leaf[1]).__name__, 'transform'))
         try:
-            x = getattr(leaf[1], function_name)(data[leaf[0]])
+            x = getattr(leaf[1], 'transform')(data[leaf[0]])
         except ValueError as e:
             raise ValueError('Error: ValueError exception occured while calling {}.{} method. Most likely you used'
                              ' 2D transformer. At the moment, only 1D transformers are supported. Please use 1D '
-                             'variant or use wrapper'.format(type(leaf[1]).__name__, function_name))
+                             'variant or use wrapper'.format(type(leaf[1]).__name__, 'transform'))
         except Exception as e:
             raise RuntimeError('Error: unknown error while calling transform method of {} class provided in '
                                'structure. Error was:'.format(type(leaf[1]).__name__, e))
         return x
 
-    def __shape_func(self, leaf, **kwargs):
+    def __shape_func(self, data, leaf):
         """
         Not sure how to implement it yet. Maybe transform and then shape of the output. Maybe it is not needed at all
         :param leaf:
         :return:
         """
-        if hasattr(leaf[1], 'classes_'):
-            x = len(leaf[1].classes_)
+        x = self.__transform_func(data, leaf)
+        if x.ndim == 1:
+            return None,
         else:
-            raise ValueError('Error: transformer {} provided in structure has neither of these properties to identify'
-                             ' its shape [classes_]'.format(type(leaf[1]).__name__))
-        return None, x
-
-    def __n_classes_func(self, leaf, **kwargs):
-        if hasattr(leaf[1], 'classes_'):
-            x = len(leaf[1].classes_)
-        else:
-            raise ValueError('Error: transformer {} provided in structure has neither of these properties to identify'
-                             ' its shape [classes_]'.format(type(leaf[1]).__name__))
-        return None, x
+            return None, x.shape[1]
