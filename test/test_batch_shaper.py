@@ -118,3 +118,7 @@ class TestBatchShaper:
         assert shape[0][0] == (None, 3)
         assert shape[0][1] == (None, 4)
         assert shape[1] == (None, )
+
+    def test_init_with_data_sample(self):
+        # TODO
+        pass
