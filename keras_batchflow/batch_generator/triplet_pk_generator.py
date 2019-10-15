@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from .batch_generator import BatchGenerator
-from transformer.triplet_pk_batch_labeler import TripletPKBatchLabeler
+from keras_batchflow.transformer.triplet_pk_batch_labeler import TripletPKBatchLabeler
 
 
 class TripletPKGenerator(BatchGenerator):

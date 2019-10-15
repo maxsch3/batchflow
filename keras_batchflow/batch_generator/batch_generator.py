@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
-from batch_shaper.batch_shaper import BatchShaper
-from batch_transformer.batch_transformer import BatchTransformer
+from ..batch_shaper.batch_shaper import BatchShaper
+from ..batch_transformer.batch_transformer import BatchTransformer
 from keras.utils import Sequence
 
 

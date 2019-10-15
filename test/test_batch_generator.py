@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 import numpy as np
-from batch_generator.batch_generator import BatchGenerator
+from keras_batchflow.batch_generator import BatchGenerator
 from sklearn.preprocessing import LabelEncoder, LabelBinarizer, OneHotEncoder
 
 
@@ -76,3 +76,7 @@ class TestBatchGenerator:
         bg.on_epoch_end()
         batch2 = bg[0]
         assert np.array_equal(batch1[0], batch2[0])
+
+
+if __name__ == '__main__':
+    pytest.main([__file__])

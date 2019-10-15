@@ -1,6 +1,7 @@
 from sklearn.base import BaseEstimator, TransformerMixin
 from inspect import isclass
 import pandas as pd
+import numpy as np
 
 
 class BatchShaper:
@@ -69,22 +70,32 @@ class BatchShaper:
         if type(struc) is tuple:
             if len(struc) == 2:
                 if type(struc[0]) is str:
-                    if isclass(type(struc[1])):
+                    if struc[1] is None:
+                        return True
+                    elif isclass(type(struc[1])):
                         return True
                     else:
                         raise ValueError('Error: a transformer must be an instance of a class on structure'
                                          ' definition in {} class'.format(type(self).__name__))
+                elif struc[0] is None:
+                    # scenario (None, 1.) when constant value is outputted
+                    if np.isscalar(struc[1]):
+                        return True
         return False
 
     def __check_leaf(self, data, leaf, calling_func):
         if not self.__is_leaf(leaf):
             raise RuntimeError('Error: method {}.{} only accepts leaf of a structure, but something'
                                ' else was provided'.format(type(self).__name__, calling_func))
-        if leaf[0] not in data.columns:
+        if (leaf[0] not in data.columns) & (leaf[0] is not None):
             raise KeyError('Error: column {} was not found in data provided'.format(leaf[0]))
 
     def __transform_func(self, data, leaf):
         self.__check_leaf(data, leaf, 'transform')
+        if leaf[0] is None:
+            return np.repeat(leaf[1], data.shape[0])
+        if leaf[1] is None:
+            return data[leaf[0]].values
         if not hasattr(leaf[1], 'transform'):
             raise ValueError('Error: transformer of class {} provided in structure definition has no '
                              ' \'{}\' method'.format(type(leaf[1]).__name__, 'transform'))

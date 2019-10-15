@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder, LabelBinarizer, OneHotEncoder
-from batch_shaper.batch_shaper import BatchShaper
+from keras_batchflow.batch_shaper.batch_shaper import BatchShaper
 
 
 class TestBatchShaper:
@@ -122,3 +122,42 @@ class TestBatchShaper:
     def test_init_with_data_sample(self):
         # TODO
         pass
+
+    def test_none_transformer(self):
+        bs = BatchShaper(x_structure=[('var1', self.lb), ('var2', None)], y_structure=('label', self.le))
+        batch = bs.transform(self.df)
+        assert type(batch) == tuple
+        assert len(batch) == 2
+        assert type(batch[0]) == list
+        assert len(batch[0]) == 2
+        assert np.array_equal(batch[0][1], self.df['var2'].values)
+
+    def test_const_component_int(self):
+        bs = BatchShaper(x_structure=[('var1', self.lb), (None, 0)], y_structure=('label', self.le))
+        batch = bs.transform(self.df)
+        assert type(batch) == tuple
+        assert len(batch) == 2
+        assert type(batch[0]) == list
+        assert len(batch[0]) == 2
+        assert np.all(batch[0][1] == 0)
+        assert batch[0][1].dtype == int
+
+    def test_const_component_float(self):
+        bs = BatchShaper(x_structure=[('var1', self.lb), (None, 0.)], y_structure=('label', self.le))
+        batch = bs.transform(self.df)
+        assert type(batch) == tuple
+        assert len(batch) == 2
+        assert type(batch[0]) == list
+        assert len(batch[0]) == 2
+        assert np.all(batch[0][1] == 0)
+        assert batch[0][1].dtype == float
+
+    def test_const_component_str(self):
+        bs = BatchShaper(x_structure=[('var1', self.lb), (None, u'a')], y_structure=('label', self.le))
+        batch = bs.transform(self.df)
+        assert type(batch) == tuple
+        assert len(batch) == 2
+        assert type(batch[0]) == list
+        assert len(batch[0]) == 2
+        assert np.all(batch[0][1] == 'a')
+        assert batch[0][1].dtype == '<U1' # single unicode character
