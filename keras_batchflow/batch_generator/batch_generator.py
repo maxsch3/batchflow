@@ -62,6 +62,18 @@ class BatchGenerator(Sequence):
     def shape(self):
         return self.batch_shaper.shape
 
+    @property
+    def metadata(self):
+        batch = self._select_batch(0)
+        batch = self._apply_batch_transforms(batch)
+        return self.batch_shaper.get_metadata(batch)
+
+    def _apply_batch_transforms(self, batch):
+        if self.batch_transforms is not None:
+            for t in self.batch_transforms:
+                batch = t.transform(batch, return_y=self.train_mode)
+        return batch
+
     def _select_batch(self, index):
         start_pos = index * self.batch_size
         if start_pos >= len(self.indices):
@@ -70,7 +82,5 @@ class BatchGenerator(Sequence):
         return self.data.iloc[batch_idx].copy()
 
     def _transform_batch(self, batch):
-        if self.batch_transforms is not None:
-            for t in self.batch_transforms:
-                batch = t.transform(batch, return_y=self.train_mode)
+        batch = self._apply_batch_transforms(batch)
         return self.batch_shaper.transform(batch, return_y=self.train_mode)

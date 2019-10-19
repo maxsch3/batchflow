@@ -77,6 +77,21 @@ class TestBatchGenerator:
         batch2 = bg[0]
         assert np.array_equal(batch1[0], batch2[0])
 
+    def test_metadata(self):
+        bg = BatchGenerator(
+            self.df,
+            x_structure=('var1', self.lb),
+            y_structure=('label', self.le),
+            batch_size=8,
+            shuffle=False,
+        )
+        md = bg.metadata
+        assert type(md) == tuple
+        assert len(md) == 2
+        assert type(md[0]) == dict
+        assert type(md[1]) == dict
+        # more thorough tests of the metadata format are in BatchShaper tests
+
 
 if __name__ == '__main__':
     pytest.main([__file__])

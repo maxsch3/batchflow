@@ -1,4 +1,4 @@
-from sklearn.base import BaseEstimator, TransformerMixin
+# from sklearn.base import BaseEstimator, TransformerMixin
 from inspect import isclass
 import pandas as pd
 import numpy as np
@@ -19,12 +19,13 @@ class BatchShaper:
         self.x_structure = x_structure
         self.y_structure = y_structure
         self.measured_shape = None
+        self.__dummy_constant_counter = 0
         if data_sample is not None:
             self.fit_shapes(data_sample)
         pass
 
     def transform(self, data: pd.DataFrame, **kwargs):
-        return self.__walk(data, self.__transform_func, **kwargs)
+        return self._walk(data, self._transform_func, **kwargs)
 
     @property
     def shape(self):
@@ -33,40 +34,44 @@ class BatchShaper:
                                'please use method fit_shapes before accessing shape property')
         return self.measured_shape
 
+    def get_metadata(self, data_sample):
+        self.__dummy_constant_counter = 0
+        return self._walk(data_sample, self._gather_metadata_func)
+
     def fit_shapes(self, data_sample):
         if type(data_sample) != pd.DataFrame:
             raise ValueError('Error:')
-        self.measured_shape = self.__walk(data_sample, self.__shape_func)
+        self.measured_shape = self._walk(data_sample, self._shape_func)
 
-    def __walk(self, data: pd.DataFrame, func, **kwargs):
-        x = self.__walk_structure(data, self.x_structure, func)
+    def _walk(self, data: pd.DataFrame, func, **kwargs):
+        x = self._walk_structure(data, self.x_structure, func)
         return_y = self.y_structure is not None
         if 'return_y' in kwargs:
             return_y = kwargs['return_y']
         if return_y:
-            y = self.__walk_structure(data, self.y_structure, func)
+            y = self._walk_structure(data, self.y_structure, func)
             return x, y
         else:
             return x
 
-    def __walk_structure(self, data: pd.DataFrame, struc, func):
+    def _walk_structure(self, data: pd.DataFrame, struc, func):
         """This will call a func on tuples detected as leafs. For branches, it will call itself recursively until a
         leaf reached"""
         if type(struc) is list:
-            ret = [self.__walk_structure(data, s, func) for s in struc]
+            ret = [self._walk_structure(data, s, func) for s in struc]
             return ret
         elif type(struc) is tuple:
-            if self.__is_leaf(struc):
+            if self._is_leaf(struc):
                 ret = func(data=data, leaf=struc)
                 return ret
             else:
-                ret = tuple([self.__walk_structure(data, s, func) for s in struc])
+                ret = tuple([self._walk_structure(data, s, func) for s in struc])
                 return ret
         else:
             raise ValueError('Error: structure definition in {} class only supports lists and tuples, but {}'
                              'was found'.format(type(self).__name__, type(struc)))
 
-    def __is_leaf(self, struc):
+    def _is_leaf(self, struc):
         if type(struc) is tuple:
             if len(struc) == 2:
                 if type(struc[0]) is str:
@@ -83,15 +88,15 @@ class BatchShaper:
                         return True
         return False
 
-    def __check_leaf(self, data, leaf, calling_func):
-        if not self.__is_leaf(leaf):
+    def _check_leaf(self, data, leaf, calling_func):
+        if not self._is_leaf(leaf):
             raise RuntimeError('Error: method {}.{} only accepts leaf of a structure, but something'
                                ' else was provided'.format(type(self).__name__, calling_func))
         if (leaf[0] not in data.columns) & (leaf[0] is not None):
             raise KeyError('Error: column {} was not found in data provided'.format(leaf[0]))
 
-    def __transform_func(self, data, leaf):
-        self.__check_leaf(data, leaf, 'transform')
+    def _transform_func(self, data, leaf):
+        self._check_leaf(data, leaf, 'transform')
         if leaf[0] is None:
             return np.repeat(leaf[1], data.shape[0])
         if leaf[1] is None:
@@ -101,7 +106,7 @@ class BatchShaper:
                              ' \'{}\' method'.format(type(leaf[1]).__name__, 'transform'))
         try:
             x = getattr(leaf[1], 'transform')(data[leaf[0]])
-        except ValueError as e:
+        except ValueError:
             raise ValueError('Error: ValueError exception occured while calling {}.{} method. Most likely you used'
                              ' 2D transformer. At the moment, only 1D transformers are supported. Please use 1D '
                              'variant or use wrapper'.format(type(leaf[1]).__name__, 'transform'))
@@ -110,14 +115,53 @@ class BatchShaper:
                                'structure. Error was:'.format(type(leaf[1]).__name__, e))
         return x
 
-    def __shape_func(self, data, leaf):
+    def _shape_func(self, data, leaf):
         """
-        Not sure how to implement it yet. Maybe transform and then shape of the output. Maybe it is not needed at all
-        :param leaf:
-        :return:
         """
-        x = self.__transform_func(data, leaf)
+        self._check_leaf(data, leaf, 'shape')
+        x = self._transform_func(data, leaf)
         if x.ndim == 1:
-            return None,
+            return None, 1
         else:
-            return None, x.shape[1]
+            return (None,) + x.shape[1:]
+
+    def _data_type_func(self, data, leaf):
+        """
+        """
+        self._check_leaf(data, leaf, 'shape')
+        x = self._transform_func(data, leaf)
+        return x.dtype
+
+    def _n_classes_func(self, data, leaf):
+        self._check_leaf(data, leaf, 'n_classes')
+        if (leaf[0] is None) | (leaf[1] is None):
+            return None
+        if hasattr(leaf[1], 'n_classes'):
+            return leaf[1].n_classes
+        if hasattr(leaf[1], 'classes_'):    # trying LabelEncoder compatible transformers
+            return len(leaf[1].classes_)
+        if hasattr(leaf[1], 'vocabulary_'):   # trying CountVectorizer  type of transformers
+            return len(leaf[1].vocabulary_)
+        return None
+
+    def _gather_metadata_func(self, data, leaf):
+        self._check_leaf(data, leaf, 'gather_metadata')
+        metadata = {}
+        if leaf[0] is None:
+            metadata['name'] = 'dummy_constant_' + str(self.__dummy_constant_counter)
+            self.__dummy_constant_counter += 1
+        else:
+            metadata['name'] = leaf[0]
+        metadata['encoder'] = leaf[1]
+        if np.isscalar(leaf[1]):
+            metadata['encoder'] = None
+        metadata['shape'] = self._shape_func(data, leaf)
+        metadata['dtype'] = self._data_type_func(data, leaf)
+        # Assumtion: if second dimension is 1 and data type is either integer or unsigned it is a categorical encoded
+        # as integer. This implies that encoded sequences (like sequence of token ids) must have shape
+        # (batch_size, enc_ids, sequence_length) or (None, 1, None or > 1) in Keras terms
+        if (metadata['shape'][1] == 1) & (metadata['dtype'].kind in 'ui'):
+            metadata['n_classes'] = self._n_classes_func(data, leaf)
+        else:
+            metadata['n_classes'] = None
+        return metadata
