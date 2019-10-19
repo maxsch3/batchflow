@@ -72,3 +72,8 @@ model.compile('adam', 'categorical_crossentropy')
 model.fit_generator(bg)
 ```
 
+# Installation 
+
+```shell script
+pip install git+https://github.com/maxsch3/keras-batchflow.git
+```
