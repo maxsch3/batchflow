@@ -210,3 +210,19 @@ class TestBatchShaper:
         assert shapes[0][0] == (None, 3)    # measured
         assert shapes[0][1] == (None, 11)   # direct from transformer's shape property
         assert shapes[1] == (None, 1)       # one dimensional output
+
+    def test_n_classes(self):
+
+        class A:
+            @property
+            def n_classes(self):
+                return 13
+
+            def transform(self, data):
+                return data.values
+
+        a = A()
+        bs = BatchShaper(x_structure=[('var1', self.lb), ('var1', a)], y_structure=('label', self.le))
+        n_classes = bs.n_classes
+        pass
+

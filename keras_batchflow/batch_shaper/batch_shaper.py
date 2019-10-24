@@ -34,6 +34,10 @@ class BatchShaper:
                                'please use method fit_shapes before accessing shape property')
         return self.measured_shape
 
+    @property
+    def n_classes(self):
+        return self._walk(pd.DataFrame(), self._n_classes_func)
+
     def get_metadata(self, data_sample):
         self.__dummy_constant_counter = 0
         return self._walk(data_sample, self._gather_metadata_func)
@@ -137,7 +141,8 @@ class BatchShaper:
         return x.dtype
 
     def _n_classes_func(self, data, leaf):
-        self._check_leaf(data, leaf, 'n_classes')
+        # _check_leaf is not needed here because data is not used here. Moreover, data might be missing if called
+        # from n_classes property function above
         if (leaf[0] is None) | (leaf[1] is None):
             return None
         if hasattr(leaf[1], 'n_classes'):
