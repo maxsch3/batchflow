@@ -103,22 +103,6 @@ class TestBatchShaper:
         with pytest.raises(KeyError):
             batch = bs.transform(self.df)
 
-    def test_shape(self):
-        lb2 = LabelBinarizer().fit(self.df['var2'])
-        bs = BatchShaper(x_structure=[('var1', self.lb), ('var2', lb2)], y_structure=('label', self.le))
-        # At this point, shape is not yet measured (fitted) and runtime error is expected
-        with pytest.raises(RuntimeError):
-            batch = bs.shape
-        bs.fit_shapes(self.df)
-        shape = bs.shape
-        assert type(shape) == tuple
-        assert len(shape) == 2
-        assert type(shape[0]) == list
-        assert len(shape[0]) == 2
-        assert shape[0][0] == (None, 3)
-        assert shape[0][1] == (None, 4)
-        assert shape[1] == (None, 1)
-
     def test_init_with_data_sample(self):
         # TODO
         pass
@@ -202,3 +186,27 @@ class TestBatchShaper:
         md = bs.get_metadata(self.df)
         assert md[0][1]['name'] == 'dummy_constant_0'
         assert md[0][2]['name'] == 'dummy_constant_1'
+
+    def test_shape(self):
+
+        class A:
+            @property
+            def shape(self):
+                return None, 11
+
+            def transform(self, data):
+                return data.values
+
+        a = A()
+        bs = BatchShaper(x_structure=[('var1', self.lb), ('var1', a)], y_structure=('label', self.le))
+        # At this point, shape is not yet measured (fitted) and runtime error is expected
+        with pytest.raises(RuntimeError):
+            batch = bs.shape
+        bs.fit_shapes(self.df)
+        shapes = bs.shape
+        assert type(shapes) == tuple
+        assert type(shapes[0]) == list
+        assert len(shapes[0]) == 2
+        assert shapes[0][0] == (None, 3)    # measured
+        assert shapes[0][1] == (None, 11)   # direct from transformer's shape property
+        assert shapes[1] == (None, 1)       # one dimensional output

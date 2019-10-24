@@ -119,6 +119,10 @@ class BatchShaper:
         """
         """
         self._check_leaf(data, leaf, 'shape')
+        if leaf[0] is None:
+            return None, 1
+        if hasattr(leaf[1], 'shape'):
+            return leaf[1].shape
         x = self._transform_func(data, leaf)
         if x.ndim == 1:
             return None, 1
@@ -157,11 +161,5 @@ class BatchShaper:
             metadata['encoder'] = None
         metadata['shape'] = self._shape_func(data, leaf)
         metadata['dtype'] = self._data_type_func(data, leaf)
-        # Assumtion: if second dimension is 1 and data type is either integer or unsigned it is a categorical encoded
-        # as integer. This implies that encoded sequences (like sequence of token ids) must have shape
-        # (batch_size, enc_ids, sequence_length) or (None, 1, None or > 1) in Keras terms
-        if (metadata['shape'][1] == 1) & (metadata['dtype'].kind in 'ui'):
-            metadata['n_classes'] = self._n_classes_func(data, leaf)
-        else:
-            metadata['n_classes'] = None
+        metadata['n_classes'] = self._n_classes_func(data, leaf)
         return metadata
