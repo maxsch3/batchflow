@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.preprocessing import LabelEncoder, LabelBinarizer
 from keras_batchflow.batch_generator.triplet_pk_generator import TripletPKGenerator
 from keras_batchflow.transformer.identity_transform import IdentityTransform
+from keras_batchflow.batch_transformer import BatchTransformer
 
 
 class TestTripletPKGenerator:
@@ -56,6 +57,19 @@ class TestTripletPKGenerator:
             assert batch[0][0].shape == (6,)
         assert batch[0][1].ndim == 1
         assert np.unique(batch[0][1]).tolist() == [0, 1]
+
+    def test_kwargs_pass_to_parent(self):
+        bt = BatchTransformer()
+        tg = TripletPKGenerator(
+            data=self.df,
+            triplet_label='label',
+            classes_in_batch=2,
+            samples_per_class=3,
+            batch_transforms=[bt],
+            x_structure=('id', self.it),
+            y_structure=('label', self.it)
+        )
+        pass
 
 
 

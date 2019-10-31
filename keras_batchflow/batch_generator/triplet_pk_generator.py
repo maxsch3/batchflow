@@ -18,15 +18,15 @@ class TripletPKGenerator(BatchGenerator):
                  classes_in_batch,
                  samples_per_class,
                  x_structure,
-                 y_structure=None
-                 ):
+                 y_structure=None,
+                 **kwargs):
         self.class_ref = None
         self.triplet_label = triplet_label
         self.classes_in_batch = classes_in_batch
         self.sample_per_class = samples_per_class
         self.local_labeler = TripletPKBatchLabeler()
         triplet_x_structure = self._add_local_labeller(x_structure, data)
-        super().__init__(data, triplet_x_structure, y_structure, shuffle=False)
+        super().__init__(data, triplet_x_structure, y_structure, shuffle=False, **kwargs)
 
     def _add_local_labeller(self, x_structure, data):
         self.class_ref = data[self.triplet_label].value_counts()
