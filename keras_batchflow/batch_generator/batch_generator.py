@@ -71,7 +71,7 @@ class BatchGenerator(Sequence):
     def _apply_batch_transforms(self, batch):
         if self.batch_transforms is not None:
             for t in self.batch_transforms:
-                batch = t.transform(batch, return_y=self.train_mode)
+                batch = t.transform(batch)
         return batch
 
     def _select_batch(self, index):

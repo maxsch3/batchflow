@@ -2,6 +2,7 @@ import pytest
 import pandas as pd
 import numpy as np
 from keras_batchflow.batch_generator import BatchGenerator
+from keras_batchflow.batch_transformer import BatchTransformer
 from sklearn.preprocessing import LabelEncoder, LabelBinarizer, OneHotEncoder
 
 
@@ -92,6 +93,37 @@ class TestBatchGenerator:
         assert type(md[1]) == dict
         # more thorough tests of the metadata format are in BatchShaper tests
 
+    def test_batch_transformer_integration(self):
+        """
+        This test only checks that declaring and using BatchGenerator with batch_transform parameter
+        does not cause errors.
+        TODO: need to add actual transformer here
+        """
+        class TestTransform(BatchTransformer):
+            def __init__(self, col_name):
+                self.col_name = col_name
+                super().__init__()
+
+            def transform(self, batch):
+                # red is the most rare label in the dataset. Here I will blindly replace all values in
+                # col_name column with this value
+                batch[self.col_name] = 'Red'
+                return batch
+
+        bt1 = BatchTransformer()
+        bt2 = TestTransform('label')
+        bg = BatchGenerator(
+            self.df,
+            x_structure=('var1', self.lb),
+            y_structure=('label', self.le),
+            batch_transforms=[bt1, bt2],
+            batch_size=8,
+            shuffle=False,
+        )
+        batch = bg[0]
+        assert type(batch) == tuple
+        assert len(batch) == 2
+        assert (self.le.inverse_transform(batch[1]) == 'Red').all()
 
 if __name__ == '__main__':
     pytest.main([__file__])
