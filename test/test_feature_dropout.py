@@ -2,9 +2,7 @@ import pytest
 import pandas as pd
 import numpy as np
 from scipy.stats import binom_test, chisquare
-from keras_batchflow.batch_generator import BatchGenerator
 from keras_batchflow.batch_transformer import FeatureDropout
-from sklearn.preprocessing import LabelEncoder, LabelBinarizer, OneHotEncoder
 
 
 class TestFeatureDropout:
@@ -66,3 +64,24 @@ class TestFeatureDropout:
         assert b[0] == 0
         assert b[1] == 0
 
+    def test_parameter_error_handling(self):
+        # column name is not str
+        with pytest.raises(ValueError):
+            fd = FeatureDropout(1., 1, 'v1')
+        with pytest.raises(ValueError):
+            fd = FeatureDropout(1., ['var1', 'var2', 1], ['v1', 'v2', 'v3'])
+        # drop_values and cols are same length
+        with pytest.raises(ValueError):
+            fd = FeatureDropout(1., ['var1', 'var2', 'label'], ['v1', 'v2'])
+        with pytest.raises(ValueError):
+            fd = FeatureDropout(1., ['var1', 'var2'], ['v1', 'v2', 'v3'])
+        with pytest.raises(ValueError):
+            fd = FeatureDropout(1., 'var1', ['v1', 'v2', 'v3'])
+        # col_probs is the same length as cols
+        with pytest.raises(ValueError):
+            fd = FeatureDropout(1., ['var1', 'var2', 1], ['v1', 'v2', 'v3'], col_probs=[.5, .5])
+        with pytest.raises(ValueError):
+            fd = FeatureDropout(1., 'var1', 'v1', col_probs=[.5, .5])
+        # when single column is transformed, col_probs is not accepted
+        with pytest.raises(ValueError):
+            fd = FeatureDropout(1., 'var1', 'v1', col_probs=.5)
