@@ -31,6 +31,9 @@ class FeatureDropout(BatchTransformer):
             self._drop_values = [self._drop_values]
         else:
             raise ValueError('Error: parameter cols must be a single column name a list of column names')
+        # convert to numpy arrays for vector operations below requiring multiple indexing not supported by lists
+        self._cols = np.array(self._cols)
+        self._drop_values = np.array(self._drop_values)
 
         # checking col_probs
         if col_probs is not None:
@@ -54,6 +57,5 @@ class FeatureDropout(BatchTransformer):
         if np.random.binomial(1, self._row_prob):
             n = np.random.choice(np.arange(len(self._n_probs)), p=self._n_probs) + 1
             idx = np.random.choice(np.arange(len(self._cols)), p=self._col_probs, size=n, replace=False)
-            for i in idx:
-                row[self._cols[i]] = self._drop_values[i]
+            row.loc[self._cols[idx]] = self._drop_values[idx]
         return row
