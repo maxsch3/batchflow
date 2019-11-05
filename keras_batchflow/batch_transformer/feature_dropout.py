@@ -4,7 +4,7 @@ from .batch_transformer import BatchTransformer
 
 class FeatureDropout(BatchTransformer):
 
-    def __init__(self, row_prob, cols, drop_values, col_probs=None):
+    def __init__(self, row_prob, cols, drop_values, col_probs=None, n_probs=None):
         super().__init__()
         if type(row_prob) not in [float]:
             raise ValueError('Error: row_prob must be a scalar float')
@@ -43,12 +43,17 @@ class FeatureDropout(BatchTransformer):
                 raise ValueError('Error: parameter col_probs can only be a list of floats or None')
         self._col_probs = col_probs
 
+        #checking  n_probs
+        self._n_probs = n_probs if n_probs is not None else [1.]
+
     def transform(self, batch):
         batch = batch.apply(self._transform_row, axis=1)
         return batch
 
     def _transform_row(self, row):
         if np.random.binomial(1, self._row_prob):
-            idx = np.random.choice(np.arange(len(self._cols)), p=self._col_probs)
-            row[self._cols[idx]] = self._drop_values[idx]
+            n = np.random.choice(np.arange(len(self._n_probs)), p=self._n_probs) + 1
+            idx = np.random.choice(np.arange(len(self._cols)), p=self._col_probs, size=n, replace=False)
+            for i in idx:
+                row[self._cols[i]] = self._drop_values[i]
         return row

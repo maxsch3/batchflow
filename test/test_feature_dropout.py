@@ -64,6 +64,13 @@ class TestFeatureDropout:
         assert b[0] == 0
         assert b[1] == 0
 
+    def test_multiple_feature_drop(self):
+        fd = FeatureDropout(1., ['var1', 'var2', 'label'], '', col_probs=[.5, .3, .2], n_probs=[.7, .3])
+        batch = fd.transform(self.df.sample(1000, replace=True))
+        b = (batch == '').sum(axis=1).value_counts().sort_index().tolist()
+        c, p = chisquare(b, [700, 300])
+        assert p > 0.01
+
     def test_parameter_error_handling(self):
         # column name is not str
         with pytest.raises(ValueError):
