@@ -124,7 +124,7 @@ class BatchShaper:
             if (leaf[0] not in data.columns) & (leaf[0] is not None):
                 raise KeyError('Error: column {} was not found in data provided'.format(leaf[0]))
 
-    def _transform_func(self, data, leaf):
+    def _transform_func(self, data, leaf, **kwargs):
         self._check_leaf(data, leaf, 'transform')
         if leaf[0] is None:
             return np.repeat(leaf[1], data.shape[0])
@@ -154,7 +154,7 @@ class BatchShaper:
         it = leaf[1].inverse_transform(struc_data)
         data[leaf[0]] = it
 
-    def _shape_func(self, data, leaf):
+    def _shape_func(self, data, leaf, **kwargs):
         """
         """
         self._check_leaf(data, leaf, 'shape')
@@ -168,14 +168,14 @@ class BatchShaper:
         else:
             return (None,) + x.shape[1:]
 
-    def _data_type_func(self, data, leaf):
+    def _data_type_func(self, data, leaf, **kwargs):
         """
         """
         self._check_leaf(data, leaf, 'shape')
         x = self._transform_func(data, leaf)
         return x.dtype
 
-    def _n_classes_func(self, data, leaf):
+    def _n_classes_func(self, data, leaf, **kwargs):
         # _check_leaf is not needed here because data is not used here. Moreover, data might be missing if called
         # from n_classes property function above
         if (leaf[0] is None) | (leaf[1] is None):
@@ -188,7 +188,7 @@ class BatchShaper:
             return len(leaf[1].vocabulary_)
         return None
 
-    def _gather_metadata_func(self, data, leaf):
+    def _gather_metadata_func(self, data, leaf, **kwargs):
         self._check_leaf(data, leaf, 'gather_metadata')
         metadata = {}
         if leaf[0] is None:
