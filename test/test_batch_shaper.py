@@ -226,3 +226,9 @@ class TestBatchShaper:
         n_classes = bs.n_classes
         pass
 
+    def test_inverse_transform(self):
+        le2 = LabelEncoder().fit(self.df['var2'])
+        bs = BatchShaper(x_structure=('var1', self.lb), y_structure=[('label', self.le), ('var2', le2)])
+        batch = bs.transform(self.df)
+        inverse = bs.inverse_transform(batch[1])
+        assert inverse.equals(self.df[['label', 'var2']])

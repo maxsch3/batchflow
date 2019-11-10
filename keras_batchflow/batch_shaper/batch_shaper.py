@@ -27,6 +27,11 @@ class BatchShaper:
     def transform(self, data: pd.DataFrame, **kwargs):
         return self._walk(data, self._transform_func, **kwargs)
 
+    def inverse_transform(self, y):
+        df = pd.DataFrame()
+        self._zipwalk_structure(df, self.y_structure, y, self._inverse_transform_func)
+        return df
+
     @property
     def shape(self):
         if self.measured_shape is None:
@@ -53,27 +58,46 @@ class BatchShaper:
         if 'return_y' in kwargs:
             return_y = kwargs['return_y']
         if return_y:
-            y = self._walk_structure(data, self.y_structure, func)
+            y = self._walk_structure(data, self.y_structure, func, **kwargs)
             return x, y
         else:
             return x
 
-    def _walk_structure(self, data: pd.DataFrame, struc, func):
+    def _walk_structure(self, data: pd.DataFrame, struc, func, **kwargs):
         """This will call a func on tuples detected as leafs. For branches, it will call itself recursively until a
         leaf reached"""
         if type(struc) is list:
-            ret = [self._walk_structure(data, s, func) for s in struc]
+            ret = [self._walk_structure(data, s, func, **kwargs) for s in struc]
             return ret
         elif type(struc) is tuple:
             if self._is_leaf(struc):
-                ret = func(data=data, leaf=struc)
+                ret = func(data=data, leaf=struc, **kwargs)
                 return ret
             else:
-                ret = tuple([self._walk_structure(data, s, func) for s in struc])
+                ret = tuple([self._walk_structure(data, s, func, **kwargs) for s in struc])
                 return ret
         else:
             raise ValueError('Error: structure definition in {} class only supports lists and tuples, but {}'
                              'was found'.format(type(self).__name__, type(struc)))
+
+    def _zipwalk_structure(self, data: pd.DataFrame, struc, struc_data, func, **kwargs):
+        """This function works similar to _walk structure, with only one difference: it walks two structures
+        in parallel (like zip). It is used in inverse transform logic where data returned by a model in the
+        format of y_structure is walked together with y_structure itself so that relevant encoders are applied to
+        correct parts of y_data"""
+        if (type(struc) is list) & (type(struc_data) is list):
+            ret = [self._zipwalk_structure(data, s, d, func, **kwargs) for s, d in zip(struc, struc_data)]
+            return ret
+        elif (type(struc) is tuple) & ((type(struc_data) is tuple) | (type(struc_data) is np.ndarray)):
+            if self._is_leaf(struc):
+                ret = func(data=data, struc_data=struc_data, leaf=struc, **kwargs)
+                return ret
+            else:
+                ret = tuple([self._zipwalk_structure(data, s, d, func, **kwargs) for s, d in zip(struc, struc_data)])
+                return ret
+        else:
+            raise ValueError('Error: structure definition and encoded data do not match'
+                             .format(type(self).__name__, type(struc)))
 
     def _is_leaf(self, struc):
         if type(struc) is tuple:
@@ -92,14 +116,15 @@ class BatchShaper:
                         return True
         return False
 
-    def _check_leaf(self, data, leaf, calling_func):
+    def _check_leaf(self, data, leaf, calling_func, check_data=True):
         if not self._is_leaf(leaf):
             raise RuntimeError('Error: method {}.{} only accepts leaf of a structure, but something'
                                ' else was provided'.format(type(self).__name__, calling_func))
-        if (leaf[0] not in data.columns) & (leaf[0] is not None):
-            raise KeyError('Error: column {} was not found in data provided'.format(leaf[0]))
+        if check_data:
+            if (leaf[0] not in data.columns) & (leaf[0] is not None):
+                raise KeyError('Error: column {} was not found in data provided'.format(leaf[0]))
 
-    def _transform_func(self, data, leaf):
+    def _transform_func(self, data, leaf, **kwargs):
         self._check_leaf(data, leaf, 'transform')
         if leaf[0] is None:
             return np.repeat(leaf[1], data.shape[0])
@@ -119,7 +144,17 @@ class BatchShaper:
                                'structure. Error was:'.format(type(leaf[1]).__name__, e))
         return x
 
-    def _shape_func(self, data, leaf):
+    def _inverse_transform_func(self, data, struc_data, leaf):
+        # if 'y_data' not in kwargs:
+        #     raise TypeError('_inverse_transform_func() is missing 1 requred argument: y_data')
+        self._check_leaf(data, leaf, 'inverse_transform', check_data=False)
+        if not hasattr(leaf[1], 'inverse_transform'):
+            raise ValueError('Error: the transformer {} used for column {} has no inverse_transform method'
+                             .format(type(leaf[1]).__name__, leaf[0]))
+        it = leaf[1].inverse_transform(struc_data)
+        data[leaf[0]] = it
+
+    def _shape_func(self, data, leaf, **kwargs):
         """
         """
         self._check_leaf(data, leaf, 'shape')
@@ -133,14 +168,14 @@ class BatchShaper:
         else:
             return (None,) + x.shape[1:]
 
-    def _data_type_func(self, data, leaf):
+    def _data_type_func(self, data, leaf, **kwargs):
         """
         """
         self._check_leaf(data, leaf, 'shape')
         x = self._transform_func(data, leaf)
         return x.dtype
 
-    def _n_classes_func(self, data, leaf):
+    def _n_classes_func(self, data, leaf, **kwargs):
         # _check_leaf is not needed here because data is not used here. Moreover, data might be missing if called
         # from n_classes property function above
         if (leaf[0] is None) | (leaf[1] is None):
@@ -153,7 +188,7 @@ class BatchShaper:
             return len(leaf[1].vocabulary_)
         return None
 
-    def _gather_metadata_func(self, data, leaf):
+    def _gather_metadata_func(self, data, leaf, **kwargs):
         self._check_leaf(data, leaf, 'gather_metadata')
         metadata = {}
         if leaf[0] is None:
