@@ -50,6 +50,28 @@ class TestBatchGenerator:
         with pytest.raises(IndexError):
             batch = bg[3]
 
+    def test_batch_sizes(self):
+        # batch size equals to dataset size
+        bg = BatchGenerator(
+            self.df,
+            x_structure=('var1', self.lb),
+            y_structure=('label', self.le),
+            batch_size=self.df.shape[0],
+            shuffle=True,
+        )
+        batch = bg[0]
+        assert batch[0].shape[0] == self.df.shape[0]
+        # batch size bigger than dataset size
+        bg = BatchGenerator(
+            self.df,
+            x_structure=('var1', self.lb),
+            y_structure=('label', self.le),
+            batch_size=self.df.shape[0] +10,
+            shuffle=True,
+        )
+        batch = bg[0]
+        assert batch[0].shape[0] == self.df.shape[0]
+
     def test_shuffle(self):
         bg = BatchGenerator(
             self.df,
@@ -124,6 +146,22 @@ class TestBatchGenerator:
         assert type(batch) == tuple
         assert len(batch) == 2
         assert (self.le.inverse_transform(batch[1]) == 'Red').all()
+
+    def test_inverse_transform(self):
+        # batch size equals to dataset size
+        bg = BatchGenerator(
+            self.df,
+            x_structure=('label', self.le),
+            y_structure=('var1', self.lb),
+            batch_size=self.df.shape[0],
+            shuffle=False,
+        )
+        batch = bg[0]
+        inverse = bg.inverse_transform(batch[1])
+        assert type(inverse) is pd.DataFrame
+        assert inverse.shape == (self.df.shape[0], 1)
+        b = self.df[['var1']]
+        assert inverse.equals(self.df[['var1']])
 
 if __name__ == '__main__':
     pytest.main([__file__])
