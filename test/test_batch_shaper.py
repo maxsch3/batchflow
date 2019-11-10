@@ -149,6 +149,7 @@ class TestBatchShaper:
     def test_metadata(self):
         bs = BatchShaper(x_structure=[('var1', self.lb), (None, 0.)], y_structure=('label', self.le))
         md = bs.get_metadata(self.df)
+        batch = bs.transform(self.df)
         assert type(md) is tuple
         assert len(md) == 2
         assert type(md[0]) is list
@@ -160,16 +161,20 @@ class TestBatchShaper:
         assert md[0][0]['name'] == 'var1'
         assert md[0][0]['encoder'] == self.lb
         assert md[0][0]['shape'] == (None, 3)
+        assert batch[0][0].ndim == 2
+        assert batch[0][0].shape[1] == 3
         assert md[0][0]['dtype'] == np.int64
         assert md[0][1]['name'] == 'dummy_constant_0'
         assert md[0][1]['encoder'] is None
-        assert md[0][1]['shape'] == (None, 1)
+        assert md[0][1]['shape'] == (None, )
         assert md[0][1]['dtype'] == float
+        assert batch[0][1].ndim == 1
         assert type(md[1]) == dict
         assert all([f in md[1] for f in fields_in_meta])
         assert md[1]['name'] == 'label'
         assert md[1]['encoder'] == self.le
-        assert md[1]['shape'] == (None, 1)
+        assert md[1]['shape'] == (None,)
+        assert batch[1].ndim == 1
         assert md[1]['dtype'] == np.int64
 
     def test_dummy_var_naming(self):
@@ -209,7 +214,7 @@ class TestBatchShaper:
         assert len(shapes[0]) == 2
         assert shapes[0][0] == (None, 3)    # measured
         assert shapes[0][1] == (None, 11)   # direct from transformer's shape property
-        assert shapes[1] == (None, 1)       # one dimensional output
+        assert shapes[1] == (None, )       # one dimensional output
 
     def test_n_classes(self):
 

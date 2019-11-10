@@ -159,12 +159,12 @@ class BatchShaper:
         """
         self._check_leaf(data, leaf, 'shape')
         if leaf[0] is None:
-            return None, 1
+            return None,
         if hasattr(leaf[1], 'shape'):
             return leaf[1].shape
         x = self._transform_func(data, leaf)
         if x.ndim == 1:
-            return None, 1
+            return None,
         else:
             return (None,) + x.shape[1:]
 
