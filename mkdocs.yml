@@ -1,0 +1,7 @@
+site_name: Keras batchflow
+repo_url: https://github.com/maxsch3/keras-batchflow/
+theme: readthedocs
+nav:
+  - Home: index.md
+  - User guide: user_guide.md
+  - Examples: examples.md
