@@ -1,3 +1,9 @@
-## Reference 
+# Reference 
 
-reference from docstrings will be added here
+## Batch generators
+
+::: keras_batchflow.batch_generator.BatchGenerator
+    :docstring:
+
+::: keras_batchflow.batch_generator.TripletPKGenerator
+    :docstring:

@@ -28,5 +28,7 @@ Below sections describe those out of the box components
 
 ## Batch generators
 
+Batch generators 
+
 ## Batch transformers
 
