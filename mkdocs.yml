@@ -1,7 +1,24 @@
 site_name: Keras batchflow
 repo_url: https://github.com/maxsch3/keras-batchflow/
 theme: readthedocs
+
+extra_css:
+    - css/custom.css
+
+#plugins:
+#  - mkdocstrings
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - attr_list
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - mkautodoc
+
 nav:
   - Home: index.md
   - User guide: user_guide.md
   - Examples: examples.md
+  - API: reference.md

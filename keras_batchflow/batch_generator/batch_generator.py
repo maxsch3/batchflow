@@ -7,8 +7,32 @@ from keras.utils import Sequence
 
 class BatchGenerator(Sequence):
 
-    """
-    root class for batch generators.
+    """ Basic batch generator. It is also a root class for all other batch generators.
+
+    This batch generator is a python generator object that returns new data at each new iteration. It is built
+    to b used in Keras's *_generator functions.
+
+    At every new iteration, it selects small chunk of a dataset and sends it to stack of transformers specified
+    at creation time. The generator makes sure that each datapoint will be selected once in one end-to-end walk
+
+    **Parameters:**
+
+    - **data** - a *Pandas dataframe* containing a dataset with both x and y
+    - **x_structure** - *dict* or *list of dicts* - a structure describing mapping of dataframe columns to
+        pre-fitted encoders and to keras model inputs. When model has multiple inputs, keras expects
+        a list of numpy arrays as model X's
+    - **y_structure** - (optional) *dict* or *list of dicts* - a structure describing mapping of dataframe columns to
+        pre-fitted encoders and to keras model output. When model has multiple output, keras expects
+        a list of numpy arrays as model Y's. **Default: None**
+    - **batch_transforms** - (optional) *a single instance or list of BatchTransformer* - a stack of batch transformers
+        that are applied to batches before splitting to columns. These are useful when variables interact during
+        transform. For example, in feature dropout, when only one randomly selected feature out of multiple input
+        features have to be dropped. **Default: None**
+    - **batch_size** - (optional) *int* max length of generated batch. The last batch of a dataset can be smaller
+        if total size of dataframe is not multiple of batch_size. **Default: 32**
+    - **shuffle** - (optional) *bool*, if true, the input dataframe is shuffled before each new epoch.
+        **Default: False**
+    - **train_mode** - (optional) *bool*. If true, both X and Y are returned, otherwise only X is returned
     """
 
     def __init__(self, data: pd.DataFrame, x_structure, y_structure=None,

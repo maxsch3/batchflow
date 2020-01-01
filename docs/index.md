@@ -1,15 +1,21 @@
-# Keras batchflow
+# Overview
 
 Keras batchflow is a batch generator framework for [Keras](https://keras.io). 
 The framework is generating batches for keras fit_generator and predict_generator functions in all sorts of less 
-standard scenarios: multi-input and multi-output scenarios, scenarios using dynamic data augmentation with dependencies 
+standard scenarios: multi-input and multi-output scenarios, scenarios employing dynamic data augmentation with dependencies 
 between variables, etc.
 
-It takes a pandas dataframe as an input along with a set of pre-fitted sklearn transformers and a structure definition. 
-To make batches, the framework splits the dataframe into chunks and then applies pre-fitted transformers to each chunk's 
-columns according to structure defined. It then collects numpy arrays from the transformers into a structure that Keras 
-models accept. All of this functionality is conveniently encapsulated in a single batch generator object that can be 
-used directly in all keras's *_generator functions. 
+The framework bridges gaps between keras and other two core data science modules: pandas and sklearn. With it, you can
+use pandas dataframe directly as a datasource for your keras model. You can use all breadth of standard sklearn encoders 
+to transform columns of a dataframe into numpy arrays. 
+
+Following keras's modular approach, keras batchflow is built in the same way. A batch generator the framework produces 
+is actually 
+a stack of few interchangeable objects selected from a library, just like keras's layers. Each selected object adds new
+feature to the generator. All of this gives combinatorial strength to the framework which is capable covering a wide range of 
+scenarios by just mixing library objects. 
+
+# Quick taster example
 
 Here is a quick example of what the framework can do:
 
@@ -72,4 +78,10 @@ model = Model([var1_input, var2_input], classes)
 model.compile('adam', 'categorical_crossentropy')
 
 model.fit_generator(bg)
+```
+
+# Installation
+
+```shell script
+pip install git+https://github.com/maxsch3/keras-batchflow.git
 ```
