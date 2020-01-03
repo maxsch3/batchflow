@@ -1,13 +1,15 @@
-# batchflow
-Batch generator framework for [Keras](https://keras.io). 
-The framework is primarily for generating batches in all sorts of non-standard
-scenarios, when data is too big to keep in memory, when a model has multiple inputs and outputs, etc.
+# Keras-batchflow
 
-It takes a standard pandas dataframe as an input along with a set of pre-fitted sklearn transformers. The whole 
-dataframe is splitted in batches and transformers are applied to particular columns. The results are then packaged in
-a keras-friendly format
+Keras batchflow is a batch generator framework for [Keras](https://keras.io). 
+The framework is generating batches for keras fit_generator and predict_generator functions in all sorts of less 
+standard scenarios: multi-input and multi-output scenarios, scenarios employing dynamic data augmentation with 
+dependencies between variables, etc.
 
-The project is in active development and therefore the documentation is not yet in place. Please come back later. 
+The framework bridges gaps between keras and other two core data science modules: pandas and sklearn. With it, you can
+use pandas dataframe directly as a datasource for your keras model. You can use all breadth of standard sklearn encoders 
+to transform columns of a dataframe into numpy arrays. 
+
+Read the documenatation [here](https://maxsch3.github.io/keras-batchflow/) 
 
 Meanwhile, quick tester example of what the framework is capable of
 
