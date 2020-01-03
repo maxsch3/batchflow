@@ -10,8 +10,12 @@ markdown_extensions:
   - codehilite
   - mkautodoc
 
+plugins:
+  - mkdocs-jupyter
+
 nav:
   - Home: index.md
   - User guide: user_guide.md
-  - Examples: examples.md
+  - Examples:
+    - basic usage: titanic_example.ipynb
   - API: reference.md

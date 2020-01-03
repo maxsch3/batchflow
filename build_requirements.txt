@@ -1,0 +1,3 @@
+mkdocs==1.0.4
+mkdocs-jupyter==0.10.2
+git+https://github.com/tomchristie/mkautodoc.git#egg=mkautodoc

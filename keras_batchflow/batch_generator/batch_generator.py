@@ -18,10 +18,10 @@ class BatchGenerator(Sequence):
     **Parameters:**
 
     - **data** - a *Pandas dataframe* containing a dataset with both x and y
-    - **x_structure** - *dict* or *list of dicts* - a structure describing mapping of dataframe columns to
+    - **x_structure** - *tuple* or *list of tuples* - a structure describing mapping of dataframe columns to
         pre-fitted encoders and to keras model inputs. When model has multiple inputs, keras expects
         a list of numpy arrays as model X's
-    - **y_structure** - (optional) *dict* or *list of dicts* - a structure describing mapping of dataframe columns to
+    - **y_structure** - (optional) *tuple* or *list of tuples* - a structure describing mapping of dataframe columns to
         pre-fitted encoders and to keras model output. When model has multiple output, keras expects
         a list of numpy arrays as model Y's. **Default: None**
     - **batch_transforms** - (optional) *a single instance or list of BatchTransformer* - a stack of batch transformers
