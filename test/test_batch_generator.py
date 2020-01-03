@@ -40,13 +40,13 @@ class TestBatchGenerator:
         assert type(batch[0]) == np.ndarray
         assert type(batch[1]) == np.ndarray
         assert batch[0].shape == (3, 3)
-        assert batch[1].shape == (3, )
+        assert batch[1].shape == (3, 1)
         batch = bg[2]
         assert type(batch) == tuple
         assert type(batch[0]) == np.ndarray
         assert type(batch[1]) == np.ndarray
         assert batch[0].shape == (2, 3)
-        assert batch[1].shape == (2, )
+        assert batch[1].shape == (2, 1)
         with pytest.raises(IndexError):
             batch = bg[3]
 
@@ -66,7 +66,7 @@ class TestBatchGenerator:
             self.df,
             x_structure=('var1', self.lb),
             y_structure=('label', self.le),
-            batch_size=self.df.shape[0] +10,
+            batch_size=self.df.shape[0] + 10,
             shuffle=True,
         )
         batch = bg[0]
@@ -162,6 +162,16 @@ class TestBatchGenerator:
         assert inverse.shape == (self.df.shape[0], 1)
         b = self.df[['var1']]
         assert inverse.equals(self.df[['var1']])
+
+    def test_y_structure_none(self):
+        bg = BatchGenerator(
+            self.df,
+            x_structure=('label', self.le),
+            batch_size=self.df.shape[0],
+            shuffle=False,
+        )
+        batch = bg[0]
+        assert type(batch) == np.ndarray
 
 if __name__ == '__main__':
     pytest.main([__file__])

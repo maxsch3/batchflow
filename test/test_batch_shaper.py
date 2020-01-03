@@ -33,7 +33,7 @@ class TestBatchShaper:
         assert type(batch[0]) == np.ndarray
         assert type(batch[1]) == np.ndarray
         assert batch[0].shape == (4, 3)
-        assert batch[1].shape == (4,)
+        assert batch[1].shape == (4, 1)
 
     def test_no_return_y(self):
         bs = BatchShaper(x_structure=('var1', self.lb), y_structure=('label', self.le))
@@ -66,7 +66,7 @@ class TestBatchShaper:
         assert type(batch[0][1]) == np.ndarray
         assert batch[0][0].shape == (4, 3)
         assert batch[0][1].shape == (4, 4)
-        assert batch[1].shape == (4,)
+        assert batch[1].shape == (4, 1)
 
     def test_many_y(self):
         lb2 = LabelBinarizer().fit(self.df['var2'])
@@ -79,7 +79,7 @@ class TestBatchShaper:
         assert len(batch[1]) == 2
         assert type(batch[1][0]) == np.ndarray
         assert type(batch[1][1]) == np.ndarray
-        assert batch[1][0].shape == (4,)
+        assert batch[1][0].shape == (4, 1)
         assert batch[1][1].shape == (4, 4)
         assert batch[0].shape == (4, 3)
 
@@ -114,7 +114,7 @@ class TestBatchShaper:
         assert len(batch) == 2
         assert type(batch[0]) == list
         assert len(batch[0]) == 2
-        assert np.array_equal(batch[0][1], self.df['var2'].values)
+        assert np.array_equal(batch[0][1], np.expand_dims(self.df['var2'].values, axis=-1))
 
     def test_const_component_int(self):
         bs = BatchShaper(x_structure=[('var1', self.lb), (None, 0)], y_structure=('label', self.le))
@@ -160,21 +160,21 @@ class TestBatchShaper:
         assert all([all([f in m for f in fields_in_meta]) for m in md[0]])
         assert md[0][0]['name'] == 'var1'
         assert md[0][0]['encoder'] == self.lb
-        assert md[0][0]['shape'] == (None, 3)
+        assert md[0][0]['shape'] == (3, )
         assert batch[0][0].ndim == 2
         assert batch[0][0].shape[1] == 3
         assert md[0][0]['dtype'] == np.int64
         assert md[0][1]['name'] == 'dummy_constant_0'
         assert md[0][1]['encoder'] is None
-        assert md[0][1]['shape'] == (None, )
+        assert md[0][1]['shape'] == (1, )
         assert md[0][1]['dtype'] == float
-        assert batch[0][1].ndim == 1
+        assert batch[0][1].ndim == 2
         assert type(md[1]) == dict
         assert all([f in md[1] for f in fields_in_meta])
         assert md[1]['name'] == 'label'
         assert md[1]['encoder'] == self.le
-        assert md[1]['shape'] == (None,)
-        assert batch[1].ndim == 1
+        assert md[1]['shape'] == (1, )
+        assert batch[1].ndim == 2
         assert md[1]['dtype'] == np.int64
 
     def test_dummy_var_naming(self):
@@ -197,7 +197,7 @@ class TestBatchShaper:
         class A:
             @property
             def shape(self):
-                return None, 11
+                return 11,
 
             def transform(self, data):
                 return data.values
@@ -212,9 +212,9 @@ class TestBatchShaper:
         assert type(shapes) == tuple
         assert type(shapes[0]) == list
         assert len(shapes[0]) == 2
-        assert shapes[0][0] == (None, 3)    # measured
-        assert shapes[0][1] == (None, 11)   # direct from transformer's shape property
-        assert shapes[1] == (None, )       # one dimensional output
+        assert shapes[0][0] == (3,)    # measured
+        assert shapes[0][1] == (11,)   # direct from transformer's shape property
+        assert shapes[1] == (1,)       # one dimensional output
 
     def test_n_classes(self):
 
