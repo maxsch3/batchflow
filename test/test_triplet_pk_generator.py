@@ -43,19 +43,19 @@ class TestTripletPKGenerator:
         assert len(batch[0]) == 2
         assert type(batch[0][0]) == np.ndarray
         assert type(batch[0][1]) == np.ndarray
-        assert batch[0][0].ndim == 1
+        assert batch[0][0].ndim == 2
         if 'Flower' in batch[1]:
-            assert batch[0][0].shape == (4,)
+            assert batch[0][0].shape == (4, 1)
         else:
-            assert batch[0][0].shape == (6,)
-        assert batch[0][1].ndim == 1
+            assert batch[0][0].shape == (6, 1)
+        assert batch[0][1].ndim == 2
         assert np.unique(batch[0][1]).tolist() == [0, 1]
         batch = tg[1]
         if 'Flower' in batch[1]:
-            assert batch[0][0].shape == (4,)
+            assert batch[0][0].shape == (4, 1)
         else:
-            assert batch[0][0].shape == (6,)
-        assert batch[0][1].ndim == 1
+            assert batch[0][0].shape == (6, 1)
+        assert batch[0][1].ndim == 2
         assert np.unique(batch[0][1]).tolist() == [0, 1]
 
     def test_kwargs_pass_to_parent(self):

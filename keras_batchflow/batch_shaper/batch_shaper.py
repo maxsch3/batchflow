@@ -55,7 +55,7 @@ class BatchShaper:
     def _walk(self, data: pd.DataFrame, func, **kwargs):
         x = self._walk_structure(data, self.x_structure, func)
         return_y = self.y_structure is not None
-        if 'return_y' in kwargs:
+        if ('return_y' in kwargs) and (self.y_structure is not None):
             return_y = kwargs['return_y']
         if return_y:
             y = self._walk_structure(data, self.y_structure, func, **kwargs)
@@ -126,23 +126,28 @@ class BatchShaper:
 
     def _transform_func(self, data, leaf, **kwargs):
         self._check_leaf(data, leaf, 'transform')
-        if leaf[0] is None:
-            return np.repeat(leaf[1], data.shape[0])
-        if leaf[1] is None:
-            return data[leaf[0]].values
-        if not hasattr(leaf[1], 'transform'):
-            raise ValueError('Error: transformer of class {} provided in structure definition has no '
-                             ' \'{}\' method'.format(type(leaf[1]).__name__, 'transform'))
-        try:
-            x = getattr(leaf[1], 'transform')(data[leaf[0]])
-        except ValueError:
-            raise ValueError('Error: ValueError exception occured while calling {}.{} method. Most likely you used'
-                             ' 2D transformer. At the moment, only 1D transformers are supported. Please use 1D '
-                             'variant or use wrapper'.format(type(leaf[1]).__name__, 'transform'))
-        except Exception as e:
-            raise RuntimeError('Error: unknown error while calling transform method of {} class provided in '
-                               'structure. Error was:'.format(type(leaf[1]).__name__, e))
-        return x
+        x = None
+        if (leaf[0] is not None) and (leaf[1] is not None):
+            if not hasattr(leaf[1], 'transform'):
+                raise ValueError('Error: transformer of class {} provided in structure definition has no '
+                                 ' \'{}\' method'.format(type(leaf[1]).__name__, 'transform'))
+            try:
+                x = getattr(leaf[1], 'transform')(data[leaf[0]])
+            except ValueError:
+                raise ValueError('Error: ValueError exception occured while calling {}.{} method. Most likely you used'
+                                 ' 2D transformer. At the moment, only 1D transformers are supported. Please use 1D '
+                                 'variant or use wrapper'.format(type(leaf[1]).__name__, 'transform'))
+            except Exception as e:
+                raise RuntimeError('Error: unknown error while calling transform method of {} class provided in '
+                                   'structure. Error was:'.format(type(leaf[1]).__name__, e))
+        else:
+            if leaf[0] is None:
+                x = np.repeat(leaf[1], data.shape[0])
+            if leaf[1] is None:
+                x = data[leaf[0]].values
+        if x is None:
+            raise RuntimeError('Error: this should not have happened. Maybe it needs to be reported')
+        return self._reshape(x)
 
     def _inverse_transform_func(self, data, struc_data, leaf):
         # if 'y_data' not in kwargs:
@@ -159,14 +164,13 @@ class BatchShaper:
         """
         self._check_leaf(data, leaf, 'shape')
         if leaf[0] is None:
-            return None,
+            return 1,
         if hasattr(leaf[1], 'shape'):
             return leaf[1].shape
-        x = self._transform_func(data, leaf)
+        x = self._reshape(self._transform_func(data, leaf))
         if x.ndim == 1:
-            return None,
-        else:
-            return (None,) + x.shape[1:]
+            raise RuntimeError('This should not have happened. Please report this issue')
+        return tuple(x.shape[1:])
 
     def _data_type_func(self, data, leaf, **kwargs):
         """
@@ -203,3 +207,8 @@ class BatchShaper:
         metadata['dtype'] = self._data_type_func(data, leaf)
         metadata['n_classes'] = self._n_classes_func(data, leaf)
         return metadata
+
+    def _reshape(self, x: np.ndarray):
+        if x.ndim == 1:
+            return np.expand_dims(x, axis=-1)
+        return x
