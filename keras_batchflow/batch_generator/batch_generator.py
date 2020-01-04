@@ -20,16 +20,19 @@ class BatchGenerator(Sequence):
     - **data** - a *Pandas dataframe* containing a dataset with both x and y
     - **x_structure** - *tuple* or *list of tuples* - a structure describing mapping of dataframe columns to
         pre-fitted encoders and to keras model inputs. When model has multiple inputs, keras expects
-        a list of numpy arrays as model X's
+        a list of numpy arrays as model X's. Each tuple is a mapping of a dataframe column to a relevant encoder.
+        It has format `('column name', encoder)`. If encoder is None, the column values will be converted to numpy
+        array and passed unchanged. If `(None, value)` is used, a new constant of value = `value` will be added
+        to Batch generator's output.
     - **y_structure** - (optional) *tuple* or *list of tuples* - a structure describing mapping of dataframe columns to
         pre-fitted encoders and to keras model output. When model has multiple output, keras expects
-        a list of numpy arrays as model Y's. **Default: None**
+        a list of numpy arrays as model Y's. **Default: None**. Same rules and same format applies (see x_structure)
     - **batch_transforms** - (optional) *a single instance or list of BatchTransformer* - a stack of batch transformers
         that are applied to batches before splitting to columns. These are useful when variables interact during
         transform. For example, in feature dropout, when only one randomly selected feature out of multiple input
         features have to be dropped. **Default: None**
     - **batch_size** - (optional) *int* max length of generated batch. The last batch of a dataset can be smaller
-        if total size of dataframe is not multiple of batch_size. **Default: 32**
+        if total size of dataframe is not multiple of a batch_size. **Default: 32**
     - **shuffle** - (optional) *bool*, if true, the input dataframe is shuffled before each new epoch.
         **Default: False**
     - **train_mode** - (optional) *bool*. If true, both X and Y are returned, otherwise only X is returned

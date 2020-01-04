@@ -1,7 +1,9 @@
 # Overview
 
 The framework has layered and modular architecture. Each instance of batch generator is actually
-a stack of 3 layers of functionality
+a stack of 4 layers of functionality
+
+![Functional diagram](images/functional_diagram.svg)
 
 - **Batch generator** - it samples batches from a full dataset. The batches sampled are
  pandas dataframes of the same structure as full dataset. A generator passes batch to
@@ -14,6 +16,8 @@ a stack of 3 layers of functionality
 - **Sklearn transformers** - These are normally encoders that encode your data into keras friendly
  format. In the structure definition you specify which sklearn transformer you would like to
  be applied to which column of the dataset dataframe
+- **Batch shaper** - is a layer that arranges numpy arrays from encoders into a structure 
+ accepted by Keras. 
 
 At each level, there is a choice of interchangeable types of objects that you can use 
 making a batch generator with a functionality you need. On the top of that you can create 
@@ -28,7 +32,18 @@ Below sections describe those out of the box components
 
 ## Batch generators
 
-Batch generators 
+Batch generators are responsible for sampling batches from a dataset. By choosing different types of 
+of batch generators you can select different sampling strategies of a whole stack. At the moment, 
+there are two different generators included: general purpose batch transformer and triplet generator for 
+feeding data into triplet network. 
+
+All batch generators are interchangable with some minor differences in parameters 
+
+### Generic BatchGenerator
+
+### Triplet PK generator
+
+
 
 ## Batch transformers
 

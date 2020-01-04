@@ -1,13 +1,13 @@
 # Keras-batchflow
 
-Keras batchflow is a batch generator framework for [Keras](https://keras.io). 
-The framework is generating batches for keras fit_generator and predict_generator functions in all sorts of less 
+Keras batchflow is a pipeline-friendly batch generator framework for [Keras](https://keras.io). 
+The framework is generating batches for Keras's fit_generator and predict_generator functions in all sorts of less 
 standard scenarios: multi-input and multi-output scenarios, scenarios employing dynamic data augmentation with 
 dependencies between variables, etc.
 
-The framework bridges gaps between keras and other two core data science modules: pandas and sklearn. With it, you can
+The framework bridges gaps between keras, pandas and sklearn. With Keras batchflow you can
 use pandas dataframe directly as a datasource for your keras model. You can use all breadth of standard sklearn encoders 
-to transform columns of a dataframe into numpy arrays. 
+to transform columns of a dataframe into a numpy arrays. 
 
 Read the documenatation [here](https://maxsch3.github.io/keras-batchflow/) 
 
@@ -19,9 +19,9 @@ from sklearn import LabelEncoder, LabelBinarizer
 from keras_batchflow.batch_generators import BatchGenerator
 
 df = pd.DataFrame({
-    'var1': ['Class 0', 'Class 1', 'Class 0', 'Class 2', 'Class 0', 'Class 1', 'Class 0', 'Class 2'],
+    'var1': ['Leaf', 'Flower', 'Leaf', 'Branch', 'Green', 'Yellow', 'Red', 'Brown'],
     'var2': ['Green', 'Yellow', 'Red', 'Brown', 'Green', 'Yellow', 'Red', 'Brown'],
-    'label': ['Leaf', 'Flower', 'Leaf', 'Branch', 'Green', 'Yellow', 'Red', 'Brown']
+    'label': ['Class 0', 'Class 1', 'Class 0', 'Class 2', 'Class 0', 'Class 1', 'Class 0', 'Class 2'],
 })
 
 #prefit sklearn encoders
@@ -43,29 +43,30 @@ The generator returns batches of format (x_structure, y_structure) and the shape
 
 ```python
 >>> train_gen.shape
-([(None, ), (None, )], (None, 3))
+([(1, ), (1, )], (3, ))
 ``` 
 
 The first element is a x_structure and it is a list if two inputs. Both of them are outputs of LabelEncoders, that
-return integer ids of categorical variables, hence only one dimension. The y_structure is a single output produced by 
-one-hot encoder, hence 2 dimensions.
+return integer ids of categorical variables, hence the dimension has just 1 column. The y_structure is a 
+single output produced by one-hot encoder, hence the dimension has 3 columns.
 
 Now you can define a neural network and use above generator in `fit_generator` to train it
 
 ```python
-from keras.layers import Dense, Concatenate, Embedding, Input
+from keras.layers import Dense, Concatenate, Embedding, Input, Lambda
 from keras.models import Model
+import keras.backend as K
 
-shapes = bg.shape
-n_classes = bg.n_classes
+metadata_x, metadata_y = bg.metadata
 
-var1_input = Input(batch_shape=shapes[0][0])
-var2_input = Input(batch_shape=shapes[0][2])
-var1_emb = Embedding(n_classes[0][0], 10)(var1_input)
-var2_emb = Embedding(n_classes[0][1], 10)(var2_input)
+var1_input = Input(shape=metadata_x[0]['shape'])
+var2_input = Input(shape=metadata_x[0]['shape'])
+var1_emb = Embedding(metadata_x[0]['n_classes'], 10)(var1_input)
+var2_emb = Embedding(metadata_x[1]['n_classes'], 10)(var2_input)
 features = Concatenate()([var1_emb, var2_emb])
-# shapes[1] is (None, 3), so shapes[1][1] is just 3
-classes = Dense(shapes[1][1], activation='softmax')(features)
+# features has dimensions (None, 1, 10), so I remove the second one  
+features = Lambda(lambda x: K.squeeze(x, axis=1))(features)
+classes = Dense(metadata_y['shape'][0], activation='softmax')(features)
 
 model = Model([var1_input, var2_input], classes)
 
