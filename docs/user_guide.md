@@ -41,8 +41,66 @@ All batch generators are interchangable with some minor differences in parameter
 
 ### Generic BatchGenerator
 
+Generic batch generator implements basic sampling without replacement from a dataset. 
+It ensures that each datapoint is sampled only once. This batch generator may work without shuffling, i.e. when
+datapoints are sampled in the same order as they are presented in a dataset
+
+This batch generator is implemented in `BatchGenerator` class. Here is an example of use:
+
+```python
+from keras_batchflow.batch_generator import BatchGenerator
+from sklearn.preprocessing import LabelEncoder
+import pandas as pd
+from keras.models import Model
+
+titanic_data = pd.read_csv('../data/titanic/train.csv')
+
+embark_encoder = LabelEncoder().fit(titanic_data['Embarked'])
+cabinclass_encoder = LabelEncoder().fit(titanic_data['Pclass'])
+
+train_generator = BatchGenerator(titanic_data, 
+                                 x_structure=[
+                                    ('Embarked', embark_encoder),
+                                    ('Pclass', cabinclass_encoder),
+                                    ('Age', None)                    
+                                 ],
+                                 y_structure=('Survived', None),
+                                 batch_size=32,
+                                 shuffle=True
+)
+
+model = Model()
+
+model.fit_generator(train_generator)  
+```
+
+You can find all details in [API documentation](reference.md#batchgenerator-class) 
+
 ### Triplet PK generator
 
+This class implements a batch generator for a triplet network described in this 
+[paper](https://arxiv.org/abs/1703.07737). 
+
+Triplet network is an evolution of siamese networks, both of them are known for their ability to learn from very
+few samples. They sometimes referred as one-shot learning models for this property.
+
+In summary, the generator randomly samples P classes (labels) and K random datapoints for each of them. In each batch 
+both samplings are done without replacement, but samplings are independent from batch to batch, so the 
+generator does not guarantee that each datapoint will be used in one epoch once.
+
+The generator is designed to be used with triplet loss, that mines triplets "online", i.e. inside neural network 
+while training. This type of loss is already available in 
+[tensorflow](https://www.tensorflow.org/versions/r1.15/api_docs/python/tf/contrib/losses/metric_learning/triplet_semihard_loss) 
+and [tensorflow v2](https://www.tensorflow.org/addons/api_docs/python/tfa/losses/triplet_semihard_loss). 
+
+You can use this loss with keras:
+
+```python
+from tfa.losses.triplet import triplet_semihard_loss
+
+def keras_triplet_loss(labels, embeddings):
+    return triplet_semihard_loss(labels, embeddings, margin=1)
+```
 
 
 ## Batch transformers

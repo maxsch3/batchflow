@@ -1,6 +1,6 @@
-# Reference 
+# Batch generators
 
-## Batch generators
+## BatchGenerator class
 
 ::: keras_batchflow.batch_generator.BatchGenerator
     :docstring:
