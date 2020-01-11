@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  
+  <link rel="shortcut icon" href="../img/favicon.ico">
+  <title>User guide - Keras batchflow</title>
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="../css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+  <link href="../css/custom.css" rel="stylesheet">
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "User guide";
+    var mkdocs_page_input_path = "user_guide.md";
+    var mkdocs_page_url = null;
+  </script>
+  
+  <script src="../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-nav-search">
+        <a href=".." class="icon icon-home"> Keras batchflow</a>
+        
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+	<ul class="current">
+	  
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="..">Home</a>
+	    </li>
+          
+            <li class="toctree-l1 current">
+		
+    <a class="current" href="./">User guide</a>
+    <ul class="subnav">
+            
+    <li class="toctree-l2"><a href="#overview">Overview</a></li>
+    
+
+    <li class="toctree-l2"><a href="#components">Components</a></li>
+    
+        <ul>
+        
+            <li><a class="toctree-l3" href="#batch-generators">Batch generators</a></li>
+        
+            <li><a class="toctree-l3" href="#batch-transformers">Batch transformers</a></li>
+        
+        </ul>
+    
+
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Examples</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../titanic_example/">basic usage</a>
+                </li>
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../reference/">API</a>
+	    </li>
+          
+        </ul>
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="..">Keras batchflow</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="..">Docs</a> &raquo;</li>
+    
+      
+    
+    <li>User guide</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/maxsch3/keras-batchflow/edit/master/docs/user_guide.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="overview">Overview</h1>
+<p>The framework has layered and modular architecture. Each instance of batch generator is actually
+a stack of 4 layers of functionality</p>
+<p><img alt="Functional diagram" src="../images/functional_diagram.svg" /></p>
+<ul>
+<li><strong>Batch generator</strong> - it samples batches from a full dataset. The batches sampled are
+ pandas dataframes of the same structure as full dataset. A generator passes batch to
+  the next layer </li>
+<li><strong>Batch transformers</strong> - makes transformations to a sampled batch. It has access to all variables
+ in multi variable scenario and therefore can be used for transformations where variables
+  interact. E.g. feature dropout where you have number of features per each data point and 
+  you would like to drop one of them randomly. You can specify multiple transformers, which will 
+  be applied sequentially</li>
+<li><strong>Sklearn transformers</strong> - These are normally encoders that encode your data into keras friendly
+ format. In the structure definition you specify which sklearn transformer you would like to
+ be applied to which column of the dataset dataframe</li>
+<li><strong>Batch shaper</strong> - is a layer that arranges numpy arrays from encoders into a structure 
+ accepted by Keras. </li>
+</ul>
+<p>At each level, there is a choice of interchangeable types of objects that you can use 
+making a batch generator with a functionality you need. On the top of that you can create 
+custom types of layers making the framework very flexible and extendable</p>
+<h1 id="components">Components</h1>
+<p>The framework comes with few standard components that you can choose from and combine together to 
+make a generator with a required functionality. </p>
+<p>Below sections describe those out of the box components</p>
+<h2 id="batch-generators">Batch generators</h2>
+<p>Batch generators are responsible for sampling batches from a dataset. By choosing different types of 
+of batch generators you can select different sampling strategies of a whole stack. At the moment, 
+there are two different generators included: general purpose batch transformer and triplet generator for 
+feeding data into triplet network. </p>
+<p>All batch generators are interchangable with some minor differences in parameters </p>
+<h3 id="generic-batchgenerator">Generic BatchGenerator</h3>
+<p>Generic batch generator implements basic sampling without replacement from a dataset. 
+It ensures that each datapoint is sampled only once. This batch generator may work without shuffling, i.e. when
+datapoints are sampled in the same order as they are presented in a dataset</p>
+<p>This batch generator is implemented in <code>BatchGenerator</code> class. Here is an example of use:</p>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">keras_batchflow.batch_generator</span> <span class="kn">import</span> <span class="n">BatchGenerator</span>
+<span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="kn">import</span> <span class="n">LabelEncoder</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">keras.models</span> <span class="kn">import</span> <span class="n">Model</span>
+
+<span class="n">titanic_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;../data/titanic/train.csv&#39;</span><span class="p">)</span>
+
+<span class="n">embark_encoder</span> <span class="o">=</span> <span class="n">LabelEncoder</span><span class="p">()</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">titanic_data</span><span class="p">[</span><span class="s1">&#39;Embarked&#39;</span><span class="p">])</span>
+<span class="n">cabinclass_encoder</span> <span class="o">=</span> <span class="n">LabelEncoder</span><span class="p">()</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">titanic_data</span><span class="p">[</span><span class="s1">&#39;Pclass&#39;</span><span class="p">])</span>
+
+<span class="n">train_generator</span> <span class="o">=</span> <span class="n">BatchGenerator</span><span class="p">(</span><span class="n">titanic_data</span><span class="p">,</span> 
+                                 <span class="n">x_structure</span><span class="o">=</span><span class="p">[</span>
+                                    <span class="p">(</span><span class="s1">&#39;Embarked&#39;</span><span class="p">,</span> <span class="n">embark_encoder</span><span class="p">),</span>
+                                    <span class="p">(</span><span class="s1">&#39;Pclass&#39;</span><span class="p">,</span> <span class="n">cabinclass_encoder</span><span class="p">),</span>
+                                    <span class="p">(</span><span class="s1">&#39;Age&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>                    
+                                 <span class="p">],</span>
+                                 <span class="n">y_structure</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;Survived&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                                 <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
+                                 <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">()</span>
+
+<span class="n">model</span><span class="o">.</span><span class="n">fit_generator</span><span class="p">(</span><span class="n">train_generator</span><span class="p">)</span>  
+</pre></div>
+
+
+<p>You can find all details in <a href="../reference/#batchgenerator-class">API documentation</a> </p>
+<h3 id="triplet-pk-generator">Triplet PK generator</h3>
+<p>This class implements a batch generator for a triplet network described in this 
+<a href="https://arxiv.org/abs/1703.07737">paper</a>. </p>
+<p>Triplet network is an evolution of siamese networks, both of them are known for their ability to learn from very
+few samples. They sometimes referred as one-shot learning models for this property.</p>
+<p>In summary, the generator randomly samples P classes (labels) and K random datapoints for each of them. In each batch 
+both samplings are done without replacement, but samplings are independent from batch to batch, so the 
+generator does not guarantee that each datapoint will be used in one epoch once.</p>
+<p>The generator is designed to be used with triplet loss, that mines triplets "online", i.e. inside neural network 
+while training. This type of loss is already available in 
+<a href="https://www.tensorflow.org/versions/r1.15/api_docs/python/tf/contrib/losses/metric_learning/triplet_semihard_loss">tensorflow</a> 
+and <a href="https://www.tensorflow.org/addons/api_docs/python/tfa/losses/triplet_semihard_loss">tensorflow v2</a>. </p>
+<p>You can use this loss with keras:</p>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">tfa.losses.triplet</span> <span class="kn">import</span> <span class="n">triplet_semihard_loss</span>
+
+<span class="k">def</span> <span class="nf">keras_triplet_loss</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">triplet_semihard_loss</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">margin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+
+
+<h2 id="batch-transformers">Batch transformers</h2>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../titanic_example/" class="btn btn-neutral float-right" title="basic usage">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href=".." class="btn btn-neutral" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" style="cursor: pointer">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+          <a href="https://github.com/maxsch3/keras-batchflow/" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
+      
+      
+        <span><a href=".." style="color: #fcfcfc;">&laquo; Previous</a></span>
+      
+      
+        <span style="margin-left: 15px"><a href="../titanic_example/" style="color: #fcfcfc">Next &raquo;</a></span>
+      
+    </span>
+</div>
+    <script>var base_url = '..';</script>
+    <script src="../js/theme.js" defer></script>
+
+</body>
+</html>
