@@ -2,36 +2,44 @@ language: python
 python:
 #  - "2.7"
 #  - "3.4"
-  - "3.5"
-#  - "3.6"      # excluded as special case added below with env vars
+#  - "3.5"
+  - "3.6"
   - "3.7"
-jobs:
-  include:
-    - python: "3.6"
-      env: BUILD_DOC=True BUILD_PYPI=True
+
 install:
   - pip install -r requirements.txt
-# command to run tests
 script:
   - python -m pytest
 
-before_deploy:
-  - pip install -r build_requirements.txt
-  - pip install -e .
-  - mkdocs build --verbose --clean --strict # Build a local version of the docs
-deploy: # Deploy documentation to Github in the gh_pages branch
-    - provider: pages
-      skip_cleanup: true
-      github_token: $github_token
-      local_dir: site
-      on:
-          branch: develop
-#          env(BUILD_DOC) = True
-    - provider: pypi
-      user: "__token__"
-      password: $pypi_token
-      skip_existing: true
-      on:
-        branch: master
-        tags: true
-#        env(BUILD_DOC) = True
+
+jobs:
+  include:
+    - stage: deploy
+      if: branch = develop
+      python: "3.6"
+      script: skip
+      before_deploy:
+        - pip install -r build_requirements.txt
+        - pip install -e .
+        - mkdocs build --verbose --clean --strict # Build a local version of the docs
+
+#before_deploy:
+#  - pip install -r build_requirements.txt
+#  - pip install -e .
+#  - mkdocs build --verbose --clean --strict # Build a local version of the docs
+#deploy: # Deploy documentation to Github in the gh_pages branch
+#    - provider: pages
+#      skip_cleanup: true
+#      github_token: $github_token
+#      local_dir: site
+#      on:
+#          branch: develop
+##          env(BUILD_DOC) = True
+#    - provider: pypi
+#      user: "__token__"
+#      password: $pypi_token
+#      skip_existing: true
+#      on:
+#        branch: master
+#        tags: true
+##        env(BUILD_DOC) = True
