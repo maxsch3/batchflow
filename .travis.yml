@@ -22,6 +22,14 @@ jobs:
         - pip install -r build_requirements.txt
         - pip install -e .
         - mkdocs build --verbose --clean --strict # Build a local version of the docs
+      deploy: # Deploy documentation to Github in the gh_pages branch
+        - provider: pages
+          skip_cleanup: true
+          github_token: $github_token
+          local_dir: site
+          on:
+            branch: develop
+        - provider: pypi
 
 #before_deploy:
 #  - pip install -r build_requirements.txt
