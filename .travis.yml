@@ -26,7 +26,7 @@ deploy: # Deploy documentation to Github in the gh_pages branch
       local_dir: site
       on:
           branch: develop
-          env(BUILD_DOC) = True
+#          env(BUILD_DOC) = True
     - provider: pypi
       user: "__token__"
       password: $pypi_token
@@ -34,4 +34,4 @@ deploy: # Deploy documentation to Github in the gh_pages branch
       on:
         branch: master
         tags: true
-        env(BUILD_DOC) = True
+#        env(BUILD_DOC) = True
