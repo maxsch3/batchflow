@@ -1,14 +1,23 @@
-import keras
 import numpy as np
 import pandas as pd
+import pytest
+import importlib
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 # import BatchGenerator from keras namespace
-from keras_batchflow.keras.batch_generators import BatchGenerator
-from keras_batchflow.base.batch_generators import BatchGenerator as BaseBatchGenerator
-from keras.utils import Sequence
 
 
+try:
+    import keras
+    from keras_batchflow.keras.batch_generators import BatchGenerator
+    from keras_batchflow.base.batch_generators import BatchGenerator as BaseBatchGenerator
+    from keras.utils import Sequence
+except:
+    pass
+
+
+@pytest.mark.skipif(importlib.util.find_spec("keras") is None,
+                    reason='Keras is not installed in this environment (not needed when testing tensorflow 2 )')
 class TestBatchGeneratorKeras:
 
     data = None

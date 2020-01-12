@@ -10,6 +10,9 @@ from keras_batchflow.base.batch_generators import BatchGenerator as BaseBatchGen
 from tensorflow.keras.utils import Sequence as SequenceTF
 
 
+skip_tf1 = pytest.mark.skipif(tuple([int(s) for s in tf.__version__.split('.')]) < (2, 0, 0),
+                    reason='Not valid for tensorflow < 2.0.0')
+
 class TestBatchGeneratorTF:
 
     data = None
@@ -103,8 +106,7 @@ class TestBatchGeneratorTF:
         pred = keras_model.predict_generator(keras_bg, verbose=1)
         assert type(pred) == np.ndarray
 
-    @pytest.mark.skipif(tuple([int(s) for s in tf.__version__.split('.')]) < (2, 0, 0),
-                        reason='Not valid for tensorflow < 2.0.0')
+    @skip_tf1
     def test_fit_without_validation(self):
         # declare a batch generator
         tf_bg = BatchGeneratorTF(self.data, x_structure=('x1', None), y_structure=('y1', self.y1_enc))
