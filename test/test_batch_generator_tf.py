@@ -1,18 +1,25 @@
-import tensorflow as tf
+import importlib
 import numpy as np
 import pandas as pd
 import pytest
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-# import BatchGenerator from tensorflow namespace
-from keras_batchflow.tf.batch_generators import BatchGenerator as BatchGeneratorTF
-from keras_batchflow.base.batch_generators import BatchGenerator as BaseBatchGenerator
-from tensorflow.keras.utils import Sequence as SequenceTF
 
+
+try:
+    import tensorflow as tf
+    from keras_batchflow.tf.batch_generators import BatchGenerator as BatchGeneratorTF
+    from keras_batchflow.base.batch_generators import BatchGenerator as BaseBatchGenerator
+    from tensorflow.keras.utils import Sequence as SequenceTF
+except ImportError:
+    pass
 
 skip_tf1 = pytest.mark.skipif(tuple([int(s) for s in tf.__version__.split('.')]) < (2, 0, 0),
                     reason='Not valid for tensorflow < 2.0.0')
 
+
+@pytest.mark.skipif(importlib.util.find_spec("tensorflow") is None,
+                    reason='Tensorflow is not installed in this environment')
 class TestBatchGeneratorTF:
 
     data = None

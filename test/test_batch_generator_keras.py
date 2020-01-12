@@ -12,7 +12,7 @@ try:
     from keras_batchflow.keras.batch_generators import BatchGenerator
     from keras_batchflow.base.batch_generators import BatchGenerator as BaseBatchGenerator
     from keras.utils import Sequence
-except:
+except ImportError:
     pass
 
 
