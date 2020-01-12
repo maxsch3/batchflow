@@ -108,7 +108,7 @@ class BatchShaper:
                     elif isclass(type(struc[1])):
                         return True
                     else:
-                        raise ValueError('Error: a transformer must be an instance of a class on structure'
+                        raise ValueError('Error: a encoders must be an instance of a class on structure'
                                          ' definition in {} class'.format(type(self).__name__))
                 elif struc[0] is None:
                     # scenario (None, 1.) when constant value is outputted
@@ -129,13 +129,13 @@ class BatchShaper:
         x = None
         if (leaf[0] is not None) and (leaf[1] is not None):
             if not hasattr(leaf[1], 'transform'):
-                raise ValueError('Error: transformer of class {} provided in structure definition has no '
+                raise ValueError('Error: encoders of class {} provided in structure definition has no '
                                  ' \'{}\' method'.format(type(leaf[1]).__name__, 'transform'))
             try:
                 x = getattr(leaf[1], 'transform')(data[leaf[0]])
             except ValueError:
                 raise ValueError('Error: ValueError exception occured while calling {}.{} method. Most likely you used'
-                                 ' 2D transformer. At the moment, only 1D transformers are supported. Please use 1D '
+                                 ' 2D encoders. At the moment, only 1D transformers are supported. Please use 1D '
                                  'variant or use wrapper'.format(type(leaf[1]).__name__, 'transform'))
             except Exception as e:
                 raise RuntimeError('Error: unknown error while calling transform method of {} class provided in '
@@ -154,7 +154,7 @@ class BatchShaper:
         #     raise TypeError('_inverse_transform_func() is missing 1 requred argument: y_data')
         self._check_leaf(data, leaf, 'inverse_transform', check_data=False)
         if not hasattr(leaf[1], 'inverse_transform'):
-            raise ValueError('Error: the transformer {} used for column {} has no inverse_transform method'
+            raise ValueError('Error: the encoders {} used for column {} has no inverse_transform method'
                              .format(type(leaf[1]).__name__, leaf[0]))
         it = leaf[1].inverse_transform(struc_data)
         data[leaf[0]] = it

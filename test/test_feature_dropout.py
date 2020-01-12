@@ -1,8 +1,7 @@
 import pytest
 import pandas as pd
-import numpy as np
 from scipy.stats import binom_test, chisquare
-from keras_batchflow.batch_transformer import FeatureDropout
+from keras_batchflow.base.batch_transformers import FeatureDropout
 
 
 class TestFeatureDropout:

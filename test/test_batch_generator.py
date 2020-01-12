@@ -1,8 +1,8 @@
 import pytest
 import pandas as pd
 import numpy as np
-from keras_batchflow.batch_generator import BatchGenerator
-from keras_batchflow.batch_transformer import BatchTransformer
+from keras_batchflow.base.batch_generators import BatchGenerator
+from keras_batchflow.base.batch_transformers import BatchTransformer
 from sklearn.preprocessing import LabelEncoder, LabelBinarizer, OneHotEncoder
 
 
@@ -119,7 +119,7 @@ class TestBatchGenerator:
         """
         This test only checks that declaring and using BatchGenerator with batch_transform parameter
         does not cause errors.
-        TODO: need to add actual transformer here
+        TODO: need to add actual encoders here
         """
         class TestTransform(BatchTransformer):
             def __init__(self, col_name):
@@ -172,6 +172,10 @@ class TestBatchGenerator:
         )
         batch = bg[0]
         assert type(batch) == np.ndarray
+
+    def test_shapes(self):
+        # TODO
+        pass
 
 if __name__ == '__main__':
     pytest.main([__file__])

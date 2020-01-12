@@ -48,7 +48,7 @@ datapoints are sampled in the same order as they are presented in a dataset
 This batch generator is implemented in `BatchGenerator` class. Here is an example of use:
 
 ```python
-from keras_batchflow.batch_generator import BatchGenerator
+from keras_batchflow.base.batch_generators import BatchGenerator
 from sklearn.preprocessing import LabelEncoder
 import pandas as pd
 from keras.models import Model
