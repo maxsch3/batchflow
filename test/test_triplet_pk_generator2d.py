@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 import scipy.stats as stats
 from sklearn.preprocessing import LabelEncoder, LabelBinarizer
-from keras_batchflow.batch_generator.triplet_pk_generator2d import TripletPKGenerator2D
-from keras_batchflow.transformer.identity_transform import IdentityTransform
+from keras_batchflow.base.batch_generators import TripletPKGenerator2D
+from keras_batchflow.base.encoders import IdentityEncoder
 
 
 class TestTripletPKGenerator2D:
@@ -11,7 +11,7 @@ class TestTripletPKGenerator2D:
     df = None
     le = LabelEncoder()
     lb = LabelBinarizer()
-    it = IdentityTransform()
+    it = IdentityEncoder()
 
     def setup_method(self):
         self.df = pd.DataFrame({

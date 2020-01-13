@@ -1,8 +1,8 @@
-from sklearn.base import BaseEstimator, TransformerMixin
+from .base_encoder import BaseEncoder
 import numpy as np
 
 
-class BaseTransformer(BaseEstimator, TransformerMixin):
+class TripletPKBatchLabeler(BaseEncoder):
 
     def __init__(self):
         super().__init__()
@@ -14,11 +14,3 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     def transform(X):
         lookup, indexed_data = np.unique(X.values, return_inverse=True)
         return indexed_data
-
-    @property
-    def shape(self):
-        return None, 1
-
-    @property
-    def n_classes(self):
-        return None

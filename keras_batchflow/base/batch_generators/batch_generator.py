@@ -1,11 +1,10 @@
 import numpy as np
 import pandas as pd
-from ..batch_shaper.batch_shaper import BatchShaper
-from ..batch_transformer.batch_transformer import BatchTransformer
-from keras.utils import Sequence
+from ..batch_shapers.batch_shaper import BatchShaper
+from ..batch_transformers.batch_transformer import BatchTransformer
 
 
-class BatchGenerator(Sequence):
+class BatchGenerator:
 
     """ Basic batch generator. It is also a root class for all other batch generators.
 
@@ -58,7 +57,7 @@ class BatchGenerator(Sequence):
             if not all([issubclass(type(t), BatchTransformer)for t in batch_transformers]):
                 raise ValueError('Error: all batch transformers must be derived from BatchTransformer class')
         elif not issubclass(type(batch_transformers), BatchTransformer):
-            raise ValueError('Error: batch transformer provided is not a child of BatchTransformer class')
+            raise ValueError('Error: batch encoders provided is not a child of BatchTransformer class')
         else:
             raise ValueError('Error: transform stack must be a list or a single batch transform object')
 
@@ -85,8 +84,9 @@ class BatchGenerator(Sequence):
         if self.shuffle:
             np.random.shuffle(self.indices)
 
+# Shape method cause error in tensorflow's method
     @property
-    def shape(self):
+    def shapes(self):
         return self.batch_shaper.shape
 
     @property

@@ -5,12 +5,12 @@ python:
 #  - "3.5"
   - "3.6"
   - "3.7"
+env:
+  - framework=TF1
+  - framework=TF2
 
-install:
-  - pip install -r requirements.txt
 script:
-  - python -m pytest
-
+  - /bin/bash ./test_script.sh $framework
 
 jobs:
   include:
@@ -19,7 +19,7 @@ jobs:
       python: "3.6"
       script: skip
       before_deploy:
-        - pip install -r build_requirements.txt
+        - pip install -r build_requirements_tf1.txt
         - pip install -e .
         - mkdocs build --verbose --clean --strict # Build a local version of the docs
       deploy: # Deploy documentation to Github in the gh_pages branch
