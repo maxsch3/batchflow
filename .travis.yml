@@ -19,7 +19,8 @@ jobs:
       python: "3.6"
       script: skip
       install:
-        - pip install -r build_requirements_tf1.txt
+        - pip install -r requirements_tf1.txt
+        - pip install -r build_requirements.txt
         - pip install -e .
       before_deploy:
         - mkdocs build --verbose --clean --strict # Build a local version of the docs
