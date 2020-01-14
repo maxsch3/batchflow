@@ -14,8 +14,26 @@ script:
 
 jobs:
   include:
-    - stage: deploy
+    - stage: deploy-dev
       if: branch = develop
+      python: "3.6"
+      script: skip
+      install:
+        - pip install -r requirements_tf1.txt
+        - pip install -r build_requirements.txt
+        - pip install -e .
+      before_deploy:
+        - mkdocs build --verbose --clean --strict # Build a local version of the docs
+      deploy: # Deploy documentation to Github in the gh_pages branch
+        - provider: pages
+          skip_cleanup: true
+          github_token: $github_token
+          repo: maxsch3/keras-batchflow-test
+          local_dir: site
+          on:
+            branch: develop
+    - stage: deploy-prod
+      if: branch = master
       python: "3.6"
       script: skip
       install:
@@ -38,4 +56,3 @@ jobs:
           on:
             branch: master
             tags: true
-            
