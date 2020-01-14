@@ -174,8 +174,21 @@ class TestBatchGenerator:
         assert type(batch) == np.ndarray
 
     def test_shapes(self):
-        # TODO
-        pass
+        le = LabelEncoder().fit(self.df['var2'])
+        bg = BatchGenerator(
+            self.df,
+            x_structure=[('var1', self.lb), ('var2', le)],
+            y_structure=('label', self.le),
+            shuffle=False,
+        )
+        sh = bg.shapes
+        assert type(sh) == tuple
+        assert len(sh) == 2
+        assert type(sh[0]) == list
+        assert len(sh[0]) == 2
+        assert sh[0][0] == (3,)
+        assert sh[0][1] == (1,)
+        assert sh[1] == (1,)
 
 if __name__ == '__main__':
     pytest.main([__file__])
