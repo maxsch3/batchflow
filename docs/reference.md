@@ -2,8 +2,8 @@
 
 ## BatchGenerator class
 
-::: keras_batchflow.batch_generator.BatchGenerator
+::: keras_batchflow.base.batch_generators.BatchGenerator
     :docstring:
 
-::: keras_batchflow.batch_generator.TripletPKGenerator
+::: keras_batchflow.base.batch_generators.TripletPKGenerator
     :docstring:
