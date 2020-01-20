@@ -4,7 +4,10 @@ import pandas as pd
 import pytest
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-
+import tensorflow as tf
+from keras_batchflow.tf.batch_generators import BatchGenerator as BatchGeneratorTF
+from keras_batchflow.base.batch_generators import BatchGenerator as BaseBatchGenerator
+from tensorflow.keras.utils import Sequence as SequenceTF
 
 try:
     import tensorflow as tf
