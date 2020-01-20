@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder, LabelBinarizer
 from keras_batchflow.base.batch_generators import TripletPKGenerator
-from keras_batchflow.base.encoders import IdentityEncoder
 from keras_batchflow.base.batch_transformers import BatchTransformer
 
 
@@ -11,7 +10,6 @@ class TestTripletPKGenerator:
     df = None
     le = LabelEncoder()
     lb = LabelBinarizer()
-    it = IdentityEncoder()
 
     def setup_method(self):
         self.df = pd.DataFrame({
@@ -32,31 +30,30 @@ class TestTripletPKGenerator:
             triplet_label='label',
             classes_in_batch=2,
             samples_per_class=3,
-            x_structure=('id', self.it),
-            y_structure=('label', self.it)
+            x_structure=('id', None),
+            y_structure=('label', None)
         )
         assert len(tg) == 2
         batch = tg[0]
         assert type(batch) == tuple
         assert len(batch) == 2
-        assert type(batch[0]) == list
-        assert len(batch[0]) == 2
-        assert type(batch[0][0]) == np.ndarray
-        assert type(batch[0][1]) == np.ndarray
-        assert batch[0][0].ndim == 2
+        assert type(batch[0]) == np.ndarray
+        assert batch[0].ndim == 2
+        assert type(batch[1]) is np.ndarray
         if 'Flower' in batch[1]:
-            assert batch[0][0].shape == (4, 1)
+            assert batch[0].shape == (4, 1)
+            assert batch[1].shape == (4, 1)
         else:
-            assert batch[0][0].shape == (6, 1)
-        assert batch[0][1].ndim == 2
-        assert np.unique(batch[0][1]).tolist() == [0, 1]
+            assert batch[0].shape == (6, 1)
+            assert batch[1].shape == (6, 1)
         batch = tg[1]
         if 'Flower' in batch[1]:
-            assert batch[0][0].shape == (4, 1)
+            assert batch[0].shape == (4, 1)
+            assert batch[1].shape == (4, 1)
         else:
-            assert batch[0][0].shape == (6, 1)
-        assert batch[0][1].ndim == 2
-        assert np.unique(batch[0][1]).tolist() == [0, 1]
+            assert batch[0].shape == (6, 1)
+            assert batch[1].shape == (6, 1)
+
 
     def test_kwargs_pass_to_parent(self):
         bt = BatchTransformer()
@@ -66,8 +63,8 @@ class TestTripletPKGenerator:
             classes_in_batch=2,
             samples_per_class=3,
             batch_transforms=[bt],
-            x_structure=('id', self.it),
-            y_structure=('label', self.it)
+            x_structure=('id', None),
+            y_structure=('label', None)
         )
         pass
 
