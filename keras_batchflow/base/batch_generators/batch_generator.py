@@ -43,10 +43,10 @@ class BatchGenerator:
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.train_mode = train_mode
-        self.batch_shaper = BatchShaper(x_structure, y_structure,
-                                        data_sample=data.iloc[:min(data.shape[0], 10)])
         self.__check_batch_transformers(batch_transforms)
         self.batch_transforms = batch_transforms
+        self.batch_shaper = BatchShaper(x_structure, y_structure,
+                                        data_sample=self._apply_batch_transforms(data.iloc[:min(data.shape[0], 10)]))
         self.indices = np.arange(self.data.shape[0])
         self.on_epoch_end()
 
