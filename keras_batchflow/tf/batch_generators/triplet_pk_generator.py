@@ -1,9 +1,9 @@
-from keras.utils import Sequence
+from tensorflow.keras.utils import Sequence as SequenceTF
 import pandas as pd
 from keras_batchflow.base.batch_generators import TripletPKGenerator as BaseTripletPKGenerator
 
 
-class TripletPKGenerator(BaseTripletPKGenerator, Sequence):
+class TripletPKGenerator(BaseTripletPKGenerator, SequenceTF):
 
     def __init__(self,
                  data: pd.DataFrame,

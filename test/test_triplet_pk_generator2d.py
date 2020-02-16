@@ -1,11 +1,13 @@
 import pandas as pd
 import numpy as np
+import pytest
 import scipy.stats as stats
 from sklearn.preprocessing import LabelEncoder, LabelBinarizer
 from keras_batchflow.base.batch_generators import TripletPKGenerator2D
 from keras_batchflow.base.encoders import IdentityEncoder
 
 
+@pytest.mark.skip(reason="2D version of generator is to be depreciated")
 class TestTripletPKGenerator2D:
 
     df = None
