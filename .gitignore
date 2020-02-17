@@ -1,5 +1,5 @@
 venv*/*
-.ipynb_checkpoints/*
+.ipynb_checkpoints
 build/*
 dist/*
 site/*
@@ -7,3 +7,5 @@ tmp/*
 .pytest_cache/*
 keras_batchflow.egg-info/*
 data/*
+__pycache__
+.idea
