@@ -14,8 +14,8 @@ script:
 
 jobs:
   include:
-    - stage: deploy-dev
-      if: branch = develop
+    - stage: deploy-test
+      if: branch = master
       python: "3.6"
       script: skip
       install:
@@ -31,9 +31,9 @@ jobs:
           repo: maxsch3/keras-batchflow-test
           local_dir: site
           on:
-            branch: develop
+            branch: master
     - stage: deploy-prod
-      if: branch = master
+      if: branch = master AND tag IS present
       python: "3.6"
       script: skip
       install:
