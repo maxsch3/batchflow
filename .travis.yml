@@ -3,32 +3,56 @@ python:
 #  - "2.7"
 #  - "3.4"
 #  - "3.5"
-  - "3.6"      # current default Python on Travis CI
+  - "3.6"
   - "3.7"
-#  - "3.8"
-#  - "3.8-dev"  # 3.8 development branch
-#  - "nightly"  # nightly build
-# command to install dependencies
-install:
-  - pip install -r requirements.txt
-# command to run tests
-script:
-  - python -m pytest
+env:
+  - framework=TF1
+  - framework=TF2
 
-before_deploy:
-  - pip install -r build_requirements.txt
-  - pip install -e .
-  - mkdocs build --verbose --clean --strict # Build a local version of the docs
-deploy: # Deploy documentation to Github in the gh_pages branch
-    - provider: pages
-      skip_cleanup: true
-      github_token: $github_token
-      local_dir: site
-      on:
-          branch: master
-    - provider: pypi
-      user: "__token__"
-      password: $pypi_token
-      skip_existing: true
-      on:
-        all_branches: true
+script:
+  - /bin/bash ./test_script.sh $framework
+
+jobs:
+  include:
+    - stage: deploy-test
+      if: branch = master
+      python: "3.6"
+      script: skip
+      install:
+        - pip install -r requirements_tf1.txt
+        - pip install -r build_requirements.txt
+        - pip install -e .
+      before_deploy:
+        - mkdocs build --verbose --clean --strict # Build a local version of the docs
+      deploy: # Deploy documentation to Github in the gh_pages branch
+        - provider: pages
+          skip_cleanup: true
+          github_token: $github_token
+          repo: maxsch3/keras-batchflow-test
+          local_dir: site
+          on:
+            branch: master
+    - stage: deploy-prod
+      if: branch = master AND tag IS present
+      python: "3.6"
+      script: skip
+      install:
+        - pip install -r requirements_tf1.txt
+        - pip install -r build_requirements.txt
+        - pip install -e .
+      before_deploy:
+        - mkdocs build --verbose --clean --strict # Build a local version of the docs
+      deploy: # Deploy documentation to Github in the gh_pages branch
+        - provider: pages
+          skip_cleanup: true
+          github_token: $github_token
+          local_dir: site
+          on:
+            branch: master
+        - provider: pypi
+          user: "__token__"
+          password: $pypi_token
+          skip_existing: true
+          on:
+            branch: master
+            tags: true

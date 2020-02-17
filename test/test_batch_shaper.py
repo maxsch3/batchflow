@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder, LabelBinarizer, OneHotEncoder
-from keras_batchflow.batch_shaper.batch_shaper import BatchShaper
+from keras_batchflow.base.batch_shapers.batch_shaper import BatchShaper
 
 
 class TestBatchShaper:
@@ -44,7 +44,7 @@ class TestBatchShaper:
 
     def test_2d_transformer(self):
         """
-        this test checks if a BatchShaper will throw a ValueError exception when a 2D transformer is used,
+        this test checks if a BatchShaper will throw a ValueError exception when a 2D encoders is used,
         e.g. OneHotEncoder. It requires 2D input, while BatchShaper only works on per-column basis, i.e.
         provides only 1D data.
         :return:
@@ -213,7 +213,7 @@ class TestBatchShaper:
         assert type(shapes[0]) == list
         assert len(shapes[0]) == 2
         assert shapes[0][0] == (3,)    # measured
-        assert shapes[0][1] == (11,)   # direct from transformer's shape property
+        assert shapes[0][1] == (11,)   # direct from encoders's shape property
         assert shapes[1] == (1,)       # one dimensional output
 
     def test_n_classes(self):
@@ -237,3 +237,42 @@ class TestBatchShaper:
         batch = bs.transform(self.df)
         inverse = bs.inverse_transform(batch[1])
         assert inverse.equals(self.df[['label', 'var2']])
+
+    def test_multiindex_xy(self):
+        """ This test ensures that multiindex functionality works as expected. This function is used
+        when x and y use different input data of the same structure. This is a typical scenario in
+        denoising autoencoders where
+
+        :return:
+        """
+        # simulate data augmentation by changing all values in column label in X to a single value
+        df1 = self.df.copy()
+        df1['label'] = df1['label'].iloc[0]
+        df = pd.concat([df1, self.df], keys=['x', 'y'], axis=1)
+        assert df.columns.nlevels == 2
+        assert 'x' in df
+        assert 'y' in df
+        bs = BatchShaper(x_structure=('label', self.le), y_structure=('label', self.le))
+        batch = bs.transform(df)
+        assert type(batch) == tuple
+        assert len(batch) == 2
+        assert type(batch[0]) == np.ndarray
+        assert batch[0].shape == (4, 1)
+        assert np.all(batch[0] == batch[0][0, 0])
+        assert type(batch[1]) == np.ndarray
+        assert batch[1].shape == batch[0].shape
+        assert not np.all(batch[1] == batch[1][0, 0])
+
+    def test_multiindex_xy_keys_input(self):
+        """This is to test error handling of BatchShaper with regards to multiindex_xy_keys parameter"""
+        with pytest.raises(ValueError):
+            _ = BatchShaper(x_structure=('label', self.le), y_structure=('label', self.le),
+                             multiindex_xy_keys='x')
+        with pytest.raises(ValueError):
+            _ = BatchShaper(x_structure=('label', self.le), y_structure=('label', self.le),
+                             multiindex_xy_keys=('x', 'y', 'z'))
+        _ = BatchShaper(x_structure=('label', self.le), multiindex_xy_keys=('x', 'y'))
+        _ = BatchShaper(x_structure=('label', self.le), multiindex_xy_keys=(0, 1))
+        _ = BatchShaper(x_structure=('label', self.le), multiindex_xy_keys=(True, False))
+
+

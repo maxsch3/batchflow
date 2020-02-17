@@ -15,14 +15,21 @@ class BatchShaper:
     with train/test splitted datasets
     """
 
-    def __init__(self, x_structure, y_structure=None, data_sample=None):
+    def __init__(self, x_structure, y_structure=None, data_sample=None, multiindex_xy_keys=('x', 'y')):
         self.x_structure = x_structure
         self.y_structure = y_structure
+        if type(multiindex_xy_keys) is not tuple:
+            raise ValueError('Error: srtuct_index parameter must be a tuple')
+        if (len(multiindex_xy_keys) < 2) and self.y_structure:
+            raise ValueError(f'Error: when y_structure is not None, struct_index must have two values. '
+                             f'got {len(multiindex_xy_keys)}')
+        if len(multiindex_xy_keys) > 2:
+            raise ValueError(f'Error: struct_index must not be longer than 2. Got {len(multiindex_xy_keys)}')
+        self.multiindex_xy_keys = multiindex_xy_keys
         self.measured_shape = None
         self.__dummy_constant_counter = 0
         if data_sample is not None:
             self.fit_shapes(data_sample)
-        pass
 
     def transform(self, data: pd.DataFrame, **kwargs):
         return self._walk(data, self._transform_func, **kwargs)
@@ -53,12 +60,13 @@ class BatchShaper:
         self.measured_shape = self._walk(data_sample, self._shape_func)
 
     def _walk(self, data: pd.DataFrame, func, **kwargs):
-        x = self._walk_structure(data, self.x_structure, func)
+        data_x, data_y = self._get_data_xy(data)
+        x = self._walk_structure(data_x, self.x_structure, func)
         return_y = self.y_structure is not None
         if ('return_y' in kwargs) and (self.y_structure is not None):
             return_y = kwargs['return_y']
         if return_y:
-            y = self._walk_structure(data, self.y_structure, func, **kwargs)
+            y = self._walk_structure(data_y, self.y_structure, func, **kwargs)
             return x, y
         else:
             return x
@@ -108,7 +116,7 @@ class BatchShaper:
                     elif isclass(type(struc[1])):
                         return True
                     else:
-                        raise ValueError('Error: a transformer must be an instance of a class on structure'
+                        raise ValueError('Error: a encoders must be an instance of a class on structure'
                                          ' definition in {} class'.format(type(self).__name__))
                 elif struc[0] is None:
                     # scenario (None, 1.) when constant value is outputted
@@ -129,13 +137,13 @@ class BatchShaper:
         x = None
         if (leaf[0] is not None) and (leaf[1] is not None):
             if not hasattr(leaf[1], 'transform'):
-                raise ValueError('Error: transformer of class {} provided in structure definition has no '
+                raise ValueError('Error: encoders of class {} provided in structure definition has no '
                                  ' \'{}\' method'.format(type(leaf[1]).__name__, 'transform'))
             try:
                 x = getattr(leaf[1], 'transform')(data[leaf[0]])
             except ValueError:
                 raise ValueError('Error: ValueError exception occured while calling {}.{} method. Most likely you used'
-                                 ' 2D transformer. At the moment, only 1D transformers are supported. Please use 1D '
+                                 ' 2D encoders. At the moment, only 1D transformers are supported. Please use 1D '
                                  'variant or use wrapper'.format(type(leaf[1]).__name__, 'transform'))
             except Exception as e:
                 raise RuntimeError('Error: unknown error while calling transform method of {} class provided in '
@@ -154,7 +162,7 @@ class BatchShaper:
         #     raise TypeError('_inverse_transform_func() is missing 1 requred argument: y_data')
         self._check_leaf(data, leaf, 'inverse_transform', check_data=False)
         if not hasattr(leaf[1], 'inverse_transform'):
-            raise ValueError('Error: the transformer {} used for column {} has no inverse_transform method'
+            raise ValueError('Error: the encoders {} used for column {} has no inverse_transform method'
                              .format(type(leaf[1]).__name__, leaf[0]))
         it = leaf[1].inverse_transform(struc_data)
         data[leaf[0]] = it
@@ -212,3 +220,15 @@ class BatchShaper:
         if x.ndim == 1:
             return np.expand_dims(x, axis=-1)
         return x
+
+    def _get_data_xy(self, data):
+        nlevels = data.columns.nlevels
+        if nlevels == 1:
+            return data, data
+        elif nlevels == 2:
+            # define generator that will
+            if not all([name in data for name in self.multiindex_xy_keys]):
+                raise KeyError(f'Error: of the indices defined in struct_index parameter was not found in data. '
+                               f'Please check the parameter, input data or batch transforms that might add the'
+                               f'required indices')
+            return tuple([data[name] for name in self.multiindex_xy_keys])

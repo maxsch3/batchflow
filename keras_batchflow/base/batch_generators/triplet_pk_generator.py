@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 from .batch_generator import BatchGenerator
-from keras_batchflow.transformer.triplet_pk_batch_labeler import TripletPKBatchLabeler
 
 
 class TripletPKGenerator(BatchGenerator):
@@ -20,21 +19,11 @@ class TripletPKGenerator(BatchGenerator):
                  x_structure,
                  y_structure=None,
                  **kwargs):
-        self.class_ref = None
         self.triplet_label = triplet_label
+        self.class_ref = data[self.triplet_label].value_counts()
         self.classes_in_batch = classes_in_batch
         self.sample_per_class = samples_per_class
-        self.local_labeler = TripletPKBatchLabeler()
-        triplet_x_structure = self._add_local_labeller(x_structure, data)
-        super().__init__(data, triplet_x_structure, y_structure, shuffle=False, **kwargs)
-
-    def _add_local_labeller(self, x_structure, data):
-        self.class_ref = data[self.triplet_label].value_counts()
-        ll = (self.triplet_label, self.local_labeler)
-        if type(x_structure) == list:
-            return x_structure + [ll]
-        else:
-            return [x_structure, ll]
+        super().__init__(data, x_structure, y_structure, shuffle=False, **kwargs)
 
     def __len__(self):
         """

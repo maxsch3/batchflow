@@ -2,7 +2,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 import numpy as np
 
 
-class BaseTransformer(BaseEstimator, TransformerMixin):
+class BaseEncoder(BaseEstimator, TransformerMixin):
 
     def __init__(self):
         super().__init__()

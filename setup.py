@@ -8,7 +8,7 @@ sklearn transformers of your choice
 '''
 
 setup(name='keras-batchflow',
-      version='0.1.1',
+      version='0.1.2',
       description='Batch generation framework for Keras',
       long_description=long_description,
       author='Maxim Scherbak',
