@@ -33,7 +33,7 @@ jobs:
           on:
             branch: master
     - stage: deploy-prod
-      if: branch = master AND tag IS present
+      if: tag IS present
       python: "3.6"
       script: skip
       install:
