@@ -8,7 +8,7 @@ sklearn transformers of your choice
 '''
 
 setup(name='keras-batchflow',
-      version='0.1.2',
+      use_scm_version=True,
       description='Batch generation framework for Keras',
       long_description=long_description,
       author='Maxim Scherbak',
@@ -16,6 +16,7 @@ setup(name='keras-batchflow',
       url='https://github.com/maxsch3/batchflow',
       download_url='https://github.com/maxsch3/batchflow',
       license='MIT',
+      setup_requires=['setuptools_scm'],
       install_requires=['numpy>=1.9.1',
                         'scipy>=0.14',
                         'scikit-learn',
