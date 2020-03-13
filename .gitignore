@@ -9,3 +9,4 @@ keras_batchflow.egg-info/*
 data/*
 __pycache__
 .idea
+.eggs

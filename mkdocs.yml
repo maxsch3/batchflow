@@ -5,10 +5,15 @@ theme: readthedocs
 extra_css:
     - css/custom.css
 
+extra_javascript:
+  - 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML'
+
 markdown_extensions:
   - admonition
   - codehilite
   - mkautodoc
+  - pymdownx.arithmatex
+  - tables
 
 plugins:
   - mkdocs-jupyter
@@ -18,4 +23,6 @@ nav:
   - User guide: user_guide.md
   - Examples:
     - basic usage: titanic_example.ipynb
-  - API: reference.md
+  - API:
+    - Batch generators: batch_generators_api.md
+    - Batch transformers: batch_transformers_api.md
