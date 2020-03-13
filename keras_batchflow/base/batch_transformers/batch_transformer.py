@@ -2,7 +2,7 @@
 
 class BatchTransformer:
     """
-    This is an abstract class that defines basic functionality and interfaces of all BatchT ransformers
+    This is an abstract class that defines basic functionality and interfaces of all BatchTransformers
     """
     def __init__(self):
         pass

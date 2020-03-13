@@ -14,10 +14,11 @@ class BaseRandomCellTransform(BatchTransformer):
     define their own versions of augmented batch
 
     **Parameters:**
+
     - **n_probs** - a *list*, *tuple* or a *one dimensional numpy array* of probabilities $p_0, p_1, p_2, ... p_n$.
         $p_0$ is a probability for a row to have 0 augmented elements (no augmentation), $p_1$ - one random cells,
         $p_2$  - two random cells, etc. A parameter must have at least 2 values, scalars are not accepted
-    - **cols* - a *list*, *tuple* or *one dimensional numpy array* of strings with columns names to be transformed
+    - **cols** - a *list*, *tuple* or *one dimensional numpy array* of strings with columns names to be transformed
         Number of columns must be greater or equal the length of **n_probs** parameter simply because there must be
         enough columns to choose from to augment n elements in a row
     - **col_probs** - (optional) a *list*, *tuple* or *one dimensional numpy array* of floats
@@ -108,15 +109,48 @@ class BaseRandomCellTransform(BatchTransformer):
 
         The elements are selected taking the following parameters into account:
 
-        - n_probs - list of probabilities of picking 0, 1,... respectively
-        - cols - list of columns subjected to
-        - col_probs -
-
+        - n_probs - list of probabilities of picking 0, 1, ... n items in one row respectively
+        - cols - list of columns subjected to augmentation $colname_0, colname_1, ... colname_k$. $k \lt n$ to provide
+        enough choice for column picking.
+        - col_probs - expected frequencies $p_0, p_1 ... p_k$ of columns to be augmented in a one-per-row basis
 
         **Parameters:**
 
         **Returns:** a pandas dataframe of booleans of the same dimensions and indices as a batch. The returned
         dataframe has True for elements that have to be augmented
+
+
+        There is a naive way to call pick columns for augmentation by using random choice for each column separately.
+        This way I could use col_probs directly in a choice function. This however **is quite slow method** as it
+        requires one call of random choice function per row.
+
+        This object utilises a vectorized approach for picking rows:
+
+        1. generate a matrix of random standard uniform floats of size (batch_size, number of cols K)
+        2. argsort and pick leftmost n columns. They will contain indices of picked columns
+        3. Because generally not all rows will have n items picked, these indices are multiplied by a n-picking mask,
+        which nullifies some of the indices effectively de-selecting them
+        3. one hot encode of the remaining indices to make mask
+
+        ### Making n-picking mask
+
+        this mask is used to implement random number of cells per row picking which is set by `n_probs` parameter
+
+        It is created by sampling with replacement from a lower triangle matrix:
+
+        ```0, 0, 0
+         1, 0, 0
+         1, 1, 0
+         1, 1, 1
+        ```
+
+        using `n_probs` as weights. In this case, this matrix can be used for generating a mask where 0 to 3 cells
+        can be augmented in each row.
+
+        ###Performance
+
+        the tests show 3 times performance increase when using vectorised version comparing with naive implementation
+
 
         """
         rand = np.random.uniform(size=(batch.shape[0], self._cols.shape[0]))
@@ -133,101 +167,118 @@ class BaseRandomCellTransform(BatchTransformer):
     def _calculate_col_weights(self, col_probs):
         """ Calculate power factors for transformation according to desired frequencies
 
-        The weighed col sampler is using vectorized argsort for selecting unqiue ids in each row.
-        The downside of this approach is that it doesn't use weighting.
-        I.e. I can't make one column more prefferable if there is a choice of columns in each row.
-        When using uniform distribution as is, all variables become equally possible which means each
-        column can be selected with equal probability when only one column is chosen
+The weighed col sampler is using vectorized argsort for selecting unqiue ids in each row.
+The downside of this approach is that it doesn't use weighting.
+I.e. I can't make one column more prefferable if there is a choice of columns in each row.
+When using uniform distribution as is, all variables become equally possible which means each
+column can be selected with equal probability when only one column is chosen
 
-        to illustrate why this is happening, I will use CDF of a uniform distribution $X$
-        For a standard uniform distribution in unit interval $[0,1]$, the CDF fuction is
+to illustrate why this is happening, I will use CDF of a uniform distribution $X$
+For a standard uniform distribution in unit interval $[0,1]$, the CDF fuction is
 
-        $$
-        CDF(X) = x : 0\le x\le 1
-        $$
+$$
+CDF(X) = x : 0\le x\le 1
+$$
 
-        CDF sets the probability of a random variable to evaluate less than x
+CDF sets the probability of a random variable to evaluate less than x
 
-        $$
-        CDF(X, x) = p(X \le x)
-        $$
+$$
+CDF(X, x) = p(X \le x)
+$$
 
-        I can calculate probability of one variable be less than another $p(X_1 \le X_2)$.
-        For that I need to integrate the CDF:
+I can calculate probability of one variable be less than another $p(X_1 \le X_2)$.
+For that I need to integrate the CDF:
 
-        $$
-        p(X_1 \le X_2) = \int_0^1 CDF(X_2) dX_1 = \int_0^1 x dX_1 = \int_0^1 x \cdot 1 \cdot dx =
-        \bigl(\frac{x^2}{2} + C\bigr) \biggr\rvert_0^1 = \frac{1}{2}
-        $$
+$$
+p(X_1 \\le X_2) = \\int_0^1 CDF(X_2) dX_1 = \\int_0^1 x dX_1 = \\int_0^1 x \\cdot 1 \\cdot dx =
+$$
 
-        then 3 variables are used, I will calculate joint probability
+$$
+\\bigl(\\frac{x^2}{2} + C\\bigr) \\biggr\\rvert_0^1 = \\frac{1}{2}
+$$
 
-        $$
-        p(X_1 \le X_2, X_1 \le X_3) = \int_0^1 CDF(X_2) \cdot CDF(X_3) \cdot dX_1 =
-        \int_0^1 x^2 dX_1 = \int_0^1 x^2 \cdot 1 \cdot dx =
-        \bigl(\frac{x^3}{3} + C\bigr) \biggr\rvert_0^1 = \frac{1}{3}
-        $$
+then 3 variables are used, I will calculate joint probability
 
-        ## Adding weighting
+$$
+p(X_1 \\le X_2, X_1 \\le X_3) = \\int_0^1 CDF(X_2) \\cdot CDF(X_3) \\cdot dX_1 =
+\\int_0^1 x^2 dX_1 =
+$$
 
-        Now, how I can skew the outcomes, so that the expectations of them being chosen are not equal,
-        but some other ratios? For that, I need to modify distribution of $X$ so that integral changes
-        in the way we want. The distributions must not change their intervals and must stay within unit limits $[0,1]$.
-        For this reason, I will not use simple scaling.
-        Instead, I will use power transformation of standard uniform distribution.
+$$
+\\int_0^1 x^2 \\cdot 1 \\cdot dx = \\bigl(\\frac{x^3}{3} + C\\bigr) \\biggr\\rvert_0^1 = \\frac{1}{3}
+$$
 
-        $$ X_1 = X^{z_1} $$
-        $$ X_2 = X^{z_2} $$
-        $$ X_3 = X^{z_3} $$
+#### Adding weighting
 
-        The power factors $z_1, z_2, z_3$ are not yet known.
-        Lets see if we can find them using desired weights $[p_1, p_2, p_3]$ for these variables:
+Now, how I can skew the outcomes, so that the expectations of them being chosen are not equal,
+but some other ratios? For that, I need to modify distribution of $X$ so that integral changes
+in the way we want. The distributions must not change their intervals and must stay within unit limits $[0,1]$.
+For this reason, I will not use simple scaling.
+Instead, I will use power transformation of standard uniform distribution.
 
-        $$
-        p_1 = p(X_1 \le X_2, X_1 \le X_3) = \int_0^1 CDF(X_2) \cdot CDF(X_3) \cdot dX_1 =
-        \int_0^1 x^{z_2} x^{z_3} dX_1 =
-        $$
-        $$
-        \int_0^1 x^{z_2} x^{z_3} \frac{dX_1}{dx} dx = \int_0^1 x^{z_2} x^{z_3} (z_1\cdot x^{z_1-1}) dx =
-        $$
-        $$
-        z_1 \int_0^1 x^{z_2} x^{z_3} x^{z_1-1} dx = z_1 \int_0^1 x^{z_1+z_2+z_3-1} dx =
-        $$
-        $$
-        z_1 \int_0^1 x^{z_1+z_2+z_3-1} dx =
-        z_1 \bigl( \frac{x^{z_1+z_2+z_3-1}}{z_1+z_2+z_3-1} + C\bigr) \biggr\rvert_0^1 =
-        \frac{z_1}{z_1+z_2+z_3-1}
-        $$
+$$ X_1 = X^{z_1} $$
 
-        This makes a system of equations
+$$ X_2 = X^{z_2} $$
 
-        $$ p_1 = \frac{z_1}{z_1+z_2+z_3-1} $$
-        $$ p_2 = \frac{z_2}{z_1+z_2+z_3-1} $$
-        $$ p_3 = \frac{z_3}{z_1+z_2+z_3-1} $$
+$$ X_3 = X^{z_3} $$
 
-        or
+The power factors $z_1, z_2, z_3$ are not yet known.
+Lets see if we can find them using desired weights $[p_1, p_2, p_3]$ for these variables:
 
-        $$ (p_1 - 1) z_1+p_1z_2+p_1z_3 = 0 $$
-        $$ p_2z_1+(p_2-1)z_2+p_2z_3 = 0 $$
-        $$ p_3z_1+p_3z_2+(p_3-1)z_3 = 0 $$
+$$
+p_1 = p(X_1 \le X_2, X_1 \le X_3) = \int_0^1 CDF(X_2) \cdot CDF(X_3) \cdot dX_1 =
+\int_0^1 x^{z_2} x^{z_3} dX_1 =
+$$
 
-        This unfortunately is a homogenious system of equations which has a simple solution:
-        $Z = 0$ also the matrix is singular. This means that there are either none or multiple solutions.
+$$
+\int_0^1 x^{z_2} x^{z_3} \frac{dX_1}{dx} dx = \int_0^1 x^{z_2} x^{z_3} (z_1\cdot x^{z_1-1}) dx =
+$$
 
-        I will use SVD for finding one of the solution
+$$
+z_1 \int_0^1 x^{z_2} x^{z_3} x^{z_1-1} dx = z_1 \int_0^1 x^{z_1+z_2+z_3-1} dx =
+$$
 
-        $$
-        A Z = 0
-        $$
-        Matrix A can be decomposed to
-        $$
-        A = UDV^T
-        $$
+$$
+z_1 \\bigl( \\frac{x^{z_1+z_2+z_3-1}}{z_1+z_2+z_3-1} + C\\bigr) \\biggr\\rvert_0^1 =
+\\frac{z_1}{z_1+z_2+z_3}
+$$
 
-        The solution will be in the n-th column where zero diagonal element is in matrix $D$.
-        For above matrix, this element will be on last position. The solution will be located in the last row of matrix V
+Using the same logic I can make formulas for $p_2$ and $p_3$. All together, they make a system of equations
 
-        :return:
+$$ p_1 = \\frac{z_1}{z_1+z_2+z_3} $$
+
+$$ p_2 = \\frac{z_2}{z_1+z_2+z_3} $$
+
+$$ p_3 = \\frac{z_3}{z_1+z_2+z_3} $$
+
+This is a funny system which may have infinite number of solution which can be obrained by simply scaling one solution
+vector $z_1, z_2, z_3$ if it exists. Indeed, if a vector that conformed any of the equations is scaled, both nominator
+and denominator get scaled by the same number. This basically means that all possible solutions lay on a line
+
+$$ (p_1 - 1) z_1+p_1z_2+p_1z_3 = 0 $$
+
+$$ p_2z_1+(p_2-1)z_2+p_2z_3 = 0 $$
+
+$$ p_3z_1+p_3z_2+(p_3-1)z_3 = 0 $$
+
+This is also a homogenious system of equations which has a simple solution $Z = 0$, which means the line where all
+possible solutions lay crosses zero. Because there is no single solution, the matrix of the equations is singular.
+
+I will use SVD for finding one of the solution
+
+$$
+A Z = 0
+$$
+
+Matrix A can be decomposed to
+
+$$
+A = UDV^T
+$$
+
+The solution will be in the n-th column where zero diagonal element is in matrix $D$.
+For above matrix, this element will be on last position. The solution will be located in the last row of matrix V
+
         """
 
         # first, normalize p
