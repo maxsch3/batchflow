@@ -81,12 +81,13 @@ class TestFeatureDropout:
         # check if it is a proper one-hot encoding
         assert mask.sum() == data.shape[0]
         expected_counts = [5350, 2900, 1650]
+        threshold = .001
         # the counts do not make counts ideally to expected 5000, 3000, 2000
         c, p = chisquare(mask.sum(0), expected_counts)
-        if p > 0.001:
+        if p <= threshold:
             print(f'Error. looks like the column distribution {mask.sum(0)} is too far from expected '
                   f'{expected_counts}')
-        assert p > 0.001
+        assert p > threshold
 
     def test_zero_mask(self):
         rct = BaseRandomCellTransform([1., 0.], 'var1')
