@@ -2,4 +2,5 @@ setuptools-scm==3.5.0
 mkdocs==1.0.4
 mkdocs-jupyter==0.10.2
 notebook==6.0.2
+pymdown-extensions==6.3
 git+https://github.com/tomchristie/mkautodoc.git#egg=mkautodoc
