@@ -1,2 +1,2 @@
 from keras_batchflow.base.batch_transformers import BatchTransformer
-from keras_batchflow.base.batch_transformers import FeatureDropout, ShuffleNoise
+from keras_batchflow.base.batch_transformers import FeatureDropout, ShuffleNoise, BatchFork
