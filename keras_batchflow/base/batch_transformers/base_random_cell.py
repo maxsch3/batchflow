@@ -30,10 +30,15 @@ class BaseRandomCellTransform(BatchTransformer):
         (number of columns available to choose from parameter **cols**), there will be no choice and the actual counts
         of columns will be equal. This means the actual distribution will turn into a uniform discrete distribution.
         **Default: None**
+    - **data_fork** - (optinonal) a single string setting the transformer to process only this index at level 0
+        when data has multiindex columns. The typical use scenario of this parameter is de-noising autoencoders
+        when same data is fed to both inputs (x) and outputs (y) of the model, but data pushed to inputs (x)
+        is augmented. In this case, data is forked by copying to different multiindex values (x and y). By using this
+        parameter you can set the transformer to process only x 'fork' of data
 
     """
 
-    def __init__(self, n_probs, cols, col_probs=None):
+    def __init__(self, n_probs, cols, col_probs=None, data_fork=None):
         super().__init__()
         # if type(row_prob) not in [float]:
         #     raise ValueError('Error: row_prob must be a scalar float')
@@ -45,6 +50,7 @@ class BaseRandomCellTransform(BatchTransformer):
         # checking n_probs
         self._n_probs = self._validate_n_probs(n_probs)
         self._col_factors = self._calculate_col_weights(self._col_probs)
+        self._fork = self._validate_data_fork(data_fork)
 
         # seed table is a technical object used for vectorised implementation of n_probs
         self._seed = np.tril(np.ones((self._n_probs.shape[0], self._n_probs.shape[0]-1), dtype=np.int64), k=-1)
@@ -103,6 +109,13 @@ class BaseRandomCellTransform(BatchTransformer):
         if cp.shape != self._cols.shape:
             raise ValueError('Error. parameters cols and col_probs must have same shape')
         return cp
+
+    def _validate_data_fork(self, fork):
+        if fork is None:
+            return fork
+        if type(fork) != str:
+            raise ValueError('Error. Fork must be a single string value')
+        return fork
 
     def _make_mask(self, batch):
         """ This method creates a binary mask that marks items in an incoming batch that have to be augmented
@@ -297,10 +310,19 @@ For above matrix, this element will be on last position. The solution will be lo
         return batch
 
     def transform(self, batch):
-        subset = batch[self._cols]
+        if self._fork:
+            if len(batch.columns.names) != 2:
+                raise KeyError(f'Error: The data passed to {type(self).__name__} is not forked, while fork parameter '
+                               f'is specified. Please add multiindex level to columns of your data or use DataFork '
+                               f'batch transform before.')
+            subset = batch[self._fork][self._cols]
+        else:
+            subset = batch[self._cols]
         mask = self._make_mask(subset)
         augmented_batch = self._make_augmented_version(subset)
-        # batch.iloc[mask] = augmented_batch.iloc[mask]
-        subset1 = subset.mask(mask > .5, augmented_batch.values)
-        batch[self._cols] = subset1
+        transformed = subset.mask(mask.astype(bool), augmented_batch.values)
+        if self._fork:
+            batch.loc(axis=1)[self._fork, self._cols] = transformed.values
+        else:
+            batch[self._cols] = transformed
         return batch
