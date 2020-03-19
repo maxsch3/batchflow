@@ -26,6 +26,13 @@ class TestFeatureDropout:
         assert isinstance(trf, type(self.df))
         assert not np.equal(trf.values, self.df.values).all()
 
+    def test_multiple_columns(self):
+        # there was issue #86 then multiple column setup didn't work
+        sn = ShuffleNoise([.0, 1.], ['var1', 'var2', 'label'])
+        trf = sn.transform(self.df.copy())
+        assert isinstance(trf, type(self.df))
+        assert not np.equal(trf.values, self.df.values).all()
+
     def test_transform_inplace(self):
         # below are all normal definitions of the transformer. they all must be successful
         sn = ShuffleNoise([.0, 1.], 'var1')
