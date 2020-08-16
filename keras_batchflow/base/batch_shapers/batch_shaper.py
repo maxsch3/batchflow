@@ -141,13 +141,14 @@ class BatchShaper:
                                  ' \'{}\' method'.format(type(leaf[1]).__name__, 'transform'))
             try:
                 x = getattr(leaf[1], 'transform')(data[leaf[0]])
-            except ValueError:
-                raise ValueError('Error: ValueError exception occured while calling {}.{} method. Most likely you used'
-                                 ' 2D encoders. At the moment, only 1D transformers are supported. Please use 1D '
-                                 'variant or use wrapper'.format(type(leaf[1]).__name__, 'transform'))
+            except ValueError as e:
+                raise ValueError(f'Error: ValueError exception occured while calling '
+                                 f'{type(leaf[1]).__name__}.transform method. Most likely you used'
+                                 f' 2D encoders. At the moment, only 1D transformers are supported. Please use 1D '
+                                 f'variant or use wrapper. The error was: {e}')
             except Exception as e:
-                raise RuntimeError('Error: unknown error while calling transform method of {} class provided in '
-                                   'structure. Error was:'.format(type(leaf[1]).__name__, e))
+                raise RuntimeError(f'Error: unknown error while calling transform method of '
+                                   f'{type(leaf[1]).__name__} class provided in structure. The error was: {e}')
         else:
             if leaf[0] is None:
                 x = np.repeat(leaf[1], data.shape[0])
