@@ -140,7 +140,7 @@ class BatchShaper:
                 raise ValueError('Error: encoders of class {} provided in structure definition has no '
                                  ' \'{}\' method'.format(type(leaf[1]).__name__, 'transform'))
             try:
-                x = getattr(leaf[1], 'transform')(data[leaf[0]])
+                x = getattr(leaf[1], 'transform')(data[leaf[0]].values)
             except ValueError as e:
                 raise ValueError(f'Error: ValueError exception occured while calling '
                                  f'{type(leaf[1]).__name__}.transform method. Most likely you used'
