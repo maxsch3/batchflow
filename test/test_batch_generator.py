@@ -147,6 +147,26 @@ class TestBatchGenerator:
         assert len(batch) == 2
         assert (self.le.inverse_transform(batch[1]) == 'Red').all()
 
+    def test_transform(self):
+        le = LabelEncoder().fit(self.df['var2'])
+        bg = BatchGenerator(
+            self.df,
+            x_structure=[('var1', self.lb), ('var2', le)],
+            y_structure=('label', self.le),
+            shuffle=False,
+            batch_size=3,
+        )
+        trf = bg.transform(self.df)
+        assert type(trf) == tuple
+        assert len(trf) == 2
+        assert type(trf[0]) == list
+        assert len(trf[0]) == 2
+        assert type(trf[1]) == np.ndarray
+        assert trf[1].shape == (8, 1)
+        trf = bg.transform(self.df, return_y=False)
+        assert type(trf) == list
+        assert len(trf) == 2
+
     def test_inverse_transform(self):
         # batch size equals to dataset size
         bg = BatchGenerator(
