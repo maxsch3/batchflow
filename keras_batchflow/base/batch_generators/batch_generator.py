@@ -112,5 +112,9 @@ class BatchGenerator:
         batch = self._apply_batch_transforms(batch)
         return self.batch_shaper.transform(batch, return_y=self.train_mode)
 
+    def transform(self, data, return_y=True):
+        data_bt = self._apply_batch_transforms(data)
+        return self.batch_shaper.transform(data_bt, return_y=return_y)
+
     def inverse_transform(self, y_data):
         return self.batch_shaper.inverse_transform(y_data)
