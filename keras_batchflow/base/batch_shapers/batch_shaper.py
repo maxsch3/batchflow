@@ -162,11 +162,21 @@ class BatchShaper:
         # if 'y_data' not in kwargs:
         #     raise TypeError('_inverse_transform_func() is missing 1 requred argument: y_data')
         self._check_leaf(data, leaf, 'inverse_transform', check_data=False)
-        if not hasattr(leaf[1], 'inverse_transform'):
-            raise ValueError('Error: the encoders {} used for column {} has no inverse_transform method'
-                             .format(type(leaf[1]).__name__, leaf[0]))
-        it = leaf[1].inverse_transform(struc_data)
-        data[leaf[0]] = it
+        if leaf[0] is None:
+            # It is a dynamic component created by the generator itself, like (None, 0.).
+            # It should not be decoded
+            return
+        if leaf[1] is None:
+            # This covers the case when a variable is not encoded and passed to and from X,Y structure without
+            # changes. These cases have structure entry like this ('col_name', None)
+            data[leaf[0]] = struc_data
+        else:
+            # This covers all other cases
+            if not hasattr(leaf[1], 'inverse_transform'):
+                raise ValueError('Error: the encoders {} used for column {} has no inverse_transform method'
+                                 .format(type(leaf[1]).__name__, leaf[0]))
+            it = leaf[1].inverse_transform(struc_data)
+            data[leaf[0]] = it
 
     def _shape_func(self, data, leaf, **kwargs):
         """

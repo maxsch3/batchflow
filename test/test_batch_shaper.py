@@ -237,6 +237,35 @@ class TestBatchShaper:
         batch = bs.transform(self.df)
         inverse = bs.inverse_transform(batch[1])
         assert inverse.equals(self.df[['label', 'var2']])
+        # Check inverse transform when constant field is in the structure
+        bs = BatchShaper(x_structure=('var1', self.lb),
+                         y_structure=[('label', self.le), ('var2', le2), (None, 0.)])
+        batch = bs.transform(self.df)
+        # check that the constant field was added to the y output
+        assert len(batch[1]) == 3
+        inverse = bs.inverse_transform(batch[1])
+        # this is to make sure that constant field is not decoded
+        assert inverse.shape[1] == 2
+        assert inverse.equals(self.df[['label', 'var2']])
+        # Check inverse transform when direct mapping field is in the structure
+        bs = BatchShaper(x_structure=('var1', self.lb),
+                         y_structure=[('label', self.le), ('var2', le2), ('var1', None)])
+        batch = bs.transform(self.df)
+        # check that the constant field was added to the y output
+        assert len(batch[1]) == 3
+        inverse = bs.inverse_transform(batch[1])
+        # this is to make sure that constant field is decoded
+        assert inverse.shape[1] == 3
+        assert inverse.equals(self.df[['label', 'var2', 'var1']])
+        # Lastly, test that inverse transform raises an error when encoder is not None,
+        # but it does not have inverse transform method. E.g.('var1', 1.)
+        # To test that, we will need to use a hack because this is an incorrect element of a
+        # structure and it will be caught in transform method
+        # I will use batch shaper from above, but I will change its structure before calling
+        # inverse transform. This must not be done in normal use
+        bs.y_structure = [('label', self.le), ('var2', le2), ('var1', 1.)]
+        with pytest.raises(ValueError):
+            inverse = bs.inverse_transform(batch[1])
 
     def test_multiindex_xy(self):
         """ This test ensures that multiindex functionality works as expected. This function is used
