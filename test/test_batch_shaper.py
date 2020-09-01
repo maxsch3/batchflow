@@ -4,6 +4,7 @@ import numpy as np
 from sklearn.preprocessing import LabelEncoder, LabelBinarizer, OneHotEncoder
 from keras_batchflow.base.batch_shapers.batch_shaper import BatchShaper
 from keras_batchflow.base.batch_shapers.var_shaper import VarShaper
+from keras_batchflow.base.batch_transformers import BatchFork
 
 
 class TestBatchShaper:
@@ -310,12 +311,39 @@ class TestBatchShaper:
         """This is to test error handling of BatchShaper with regards to multiindex_xy_keys parameter"""
         with pytest.raises(ValueError):
             _ = BatchShaper(x_structure=('label', self.le), y_structure=('label', self.le),
-                             multiindex_xy_keys='x', data_sample=self.df)
+                            multiindex_xy_keys='x', data_sample=self.df)
         with pytest.raises(ValueError):
             _ = BatchShaper(x_structure=('label', self.le), y_structure=('label', self.le),
-                             multiindex_xy_keys=('x', 'y', 'z'), data_sample=self.df)
+                            multiindex_xy_keys=('x', 'y', 'z'), data_sample=self.df)
+        with pytest.raises(ValueError):
+            _ = BatchShaper(x_structure=('label', self.le), y_structure=('label', self.le),
+                            multiindex_xy_keys=('x', 'x'), data_sample=self.df)
         _ = BatchShaper(x_structure=('label', self.le), multiindex_xy_keys=('x', 'y'), data_sample=self.df)
         _ = BatchShaper(x_structure=('label', self.le), multiindex_xy_keys=(0, 1), data_sample=self.df)
         _ = BatchShaper(x_structure=('label', self.le), multiindex_xy_keys=(True, False), data_sample=self.df)
 
+    def test_batch_forking(self):
+        bf = BatchFork()
+        data = bf.transform(self.df)
+        assert data.columns.nlevels == 2
+        bs = BatchShaper(x_structure=[('var1', self.lb), ('label', self.le)],
+                         y_structure=('label', self.le),
+                         data_sample=data)
+        tr = bs.transform(data)
+        assert np.allclose(tr[0][1], tr[1])
+        data.loc[:, ('x', 'label')] = 'Branch'
+        tr = bs.transform(data)
+        assert not np.allclose(tr[0][1], tr[1])
+        # check that only one unique value in transformed data after the source column in x structure was filled
+        # with constant value
+        assert np.unique(tr[0][1]).size == 1
+        # test alternative multiindex keys together with BatchFork
+        bf = BatchFork(levels=(0, 1))
+        data = bf.transform(self.df)
+        assert data.columns.nlevels == 2
+        bs = BatchShaper(x_structure=[('var1', self.lb), ('label', self.le)],
+                         y_structure=('label', self.le),
+                         multiindex_xy_keys=(0, 1),
+                         data_sample=data)
+        tr = bs.transform(data)
 

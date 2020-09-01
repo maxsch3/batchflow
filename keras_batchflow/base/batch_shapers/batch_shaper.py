@@ -17,16 +17,11 @@ class BatchShaper:
     """
 
     def __init__(self, x_structure, y_structure=None, data_sample=None, multiindex_xy_keys=('x', 'y')):
-        self.x_structure = self._create_shapers(structure=x_structure, data_sample=data_sample)
-        self.y_structure = self._create_shapers(structure=y_structure, data_sample=data_sample)
-        if type(multiindex_xy_keys) is not tuple:
-            raise ValueError('Error: srtuct_index parameter must be a tuple')
-        if (len(multiindex_xy_keys) < 2) and self.y_structure:
-            raise ValueError(f'Error: when y_structure is not None, struct_index must have two values. '
-                             f'got {len(multiindex_xy_keys)}')
-        if len(multiindex_xy_keys) > 2:
-            raise ValueError(f'Error: struct_index must not be longer than 2. Got {len(multiindex_xy_keys)}')
+        self._validate_multiindex_xy_keys(x_structure, y_structure, multiindex_xy_keys)
         self.multiindex_xy_keys = multiindex_xy_keys
+        data_sample_x, data_sample_y = self._get_data_xy(data_sample)
+        self.x_structure = self._create_shapers(structure=x_structure, data_sample=data_sample_x)
+        self.y_structure = self._create_shapers(structure=y_structure, data_sample=data_sample_y)
         self.measured_shape = None
         self.__dummy_constant_counter = 0
 
@@ -49,6 +44,17 @@ class BatchShaper:
     @property
     def metadata(self):
         return self._walk(pd.DataFrame(), self._metadata_func)
+
+    def _validate_multiindex_xy_keys(self, x_structure, y_structure, multiindex_xy_keys):
+        if type(multiindex_xy_keys) is not tuple:
+            raise ValueError('Error: srtuct_index parameter must be a tuple')
+        if (len(multiindex_xy_keys) < 2) and y_structure:
+            raise ValueError(f'Error: when y_structure is not None, struct_index must have two values. '
+                             f'got {len(multiindex_xy_keys)}')
+        if len(multiindex_xy_keys) > 2:
+            raise ValueError(f'Error: struct_index must not be longer than 2. Got {len(multiindex_xy_keys)}')
+        if len(multiindex_xy_keys) != len(set(multiindex_xy_keys)):
+            raise ValueError(f"Error: All elements of 'multiindex_xy_keys' parameter must be unique")
 
     def _create_shapers(self, structure, data_sample):
         if structure is None:
@@ -159,13 +165,17 @@ class BatchShaper:
         return x
 
     def _get_data_xy(self, data):
+        if data is None:
+            return None
         nlevels = data.columns.nlevels
         if nlevels == 1:
             return data, data
         elif nlevels == 2:
             # define generator that will
             if not all([name in data for name in self.multiindex_xy_keys]):
-                raise KeyError(f'Error: of the indices defined in struct_index parameter was not found in data. '
-                               f'Please check the parameter, input data or batch transforms that might add the'
-                               f'required indices')
+                raise KeyError(f"Error: of the indices defined in struct_index parameter was not found in data. "
+                               f"Please check the parameter, input data or batch transforms, such as BatchFork, "
+                               f"'that might add the required indices. If you used BatchFork, please check that "
+                               f"its parameter 'levels' is aligned with parameter 'multiindex_xy_keys' of the "
+                               f"BatchShaper.")
             return tuple([data[name] for name in self.multiindex_xy_keys])
