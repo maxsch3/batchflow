@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder, LabelBinarizer, OneHotEncoder
 from keras_batchflow.base.batch_shapers.batch_shaper import BatchShaper
+from keras_batchflow.base.batch_shapers.var_shaper import VarShaper
 
 
 class TestBatchShaper:
@@ -26,7 +27,7 @@ class TestBatchShaper:
         pass
 
     def test_basic(self):
-        bs = BatchShaper(x_structure=('var1', self.lb), y_structure=('label', self.le))
+        bs = BatchShaper(x_structure=('var1', self.lb), y_structure=('label', self.le), data_sample=self.df)
         batch = bs.transform(self.df)
         assert type(batch) == tuple
         assert len(batch) == 2
@@ -36,7 +37,7 @@ class TestBatchShaper:
         assert batch[1].shape == (4, 1)
 
     def test_no_return_y(self):
-        bs = BatchShaper(x_structure=('var1', self.lb), y_structure=('label', self.le))
+        bs = BatchShaper(x_structure=('var1', self.lb), y_structure=('label', self.le), data_sample=self.df)
         kwargs = {'return_y': False}
         batch = bs.transform(self.df, **kwargs)
         assert type(batch) == np.ndarray
@@ -49,13 +50,15 @@ class TestBatchShaper:
         provides only 1D data.
         :return:
         """
-        bs = BatchShaper(x_structure=('var1', self.oh), y_structure=('label', self.le))
         with pytest.raises(ValueError):
-            batch = bs.transform(self.df)
+            bs = BatchShaper(x_structure=('var1', self.oh), y_structure=('label', self.le), data_sample=self.df)
+            # batch = bs.transform(self.df)
 
     def test_many_x(self):
         lb2 = LabelBinarizer().fit(self.df['var2'])
-        bs = BatchShaper(x_structure=[('var1', self.lb), ('var2', lb2)], y_structure=('label', self.le))
+        bs = BatchShaper(x_structure=[('var1', self.lb), ('var2', lb2)],
+                         y_structure=('label', self.le),
+                         data_sample=self.df)
         batch = bs.transform(self.df)
         assert type(batch) == tuple
         assert len(batch) == 2
@@ -70,7 +73,9 @@ class TestBatchShaper:
 
     def test_many_y(self):
         lb2 = LabelBinarizer().fit(self.df['var2'])
-        bs = BatchShaper(x_structure=('var1', self.lb), y_structure=[('label', self.le), ('var2', lb2)])
+        bs = BatchShaper(x_structure=('var1', self.lb),
+                         y_structure=[('label', self.le), ('var2', lb2)],
+                         data_sample=self.df)
         batch = bs.transform(self.df)
         assert type(batch) == tuple
         assert len(batch) == 2
@@ -87,20 +92,21 @@ class TestBatchShaper:
         lb2 = LabelBinarizer().fit(self.df['var2'])
         # this must throw ValueError - leafs of a structure must be tuples of
         # format ('column name', transformer_instance)
-        bs = BatchShaper(x_structure=('var1', self.lb), y_structure=('label', self.le, 1))
+        with pytest.raises(ValueError):
+            bs = BatchShaper(x_structure=('var1', self.lb), y_structure=('label', self.le, 1), data_sample=self.df)
         # this must throw ValueError - leafs of a structure must be tuples of
         # format ('column name', transformer_instance)
-        bs = BatchShaper(x_structure=('var1', self.lb), y_structure=('label', 1))
         with pytest.raises(ValueError):
-            batch = bs.transform(self.df)
+            bs = BatchShaper(x_structure=('var1', self.lb), y_structure=('label', 1), data_sample=self.df)
         # this must also throw ValueError - structure must be a tuple (X, y) to conform Keras requirements
-        bs = BatchShaper(x_structure=[('var1', self.lb)], y_structure=('label', self.le, 1))
         with pytest.raises(ValueError):
-            batch = bs.transform(self.df)
+            bs = BatchShaper(x_structure=[('var1', self.lb)], y_structure=('label', self.le, 1), data_sample=self.df)
 
     def test_missing_field(self):
-        bs = BatchShaper(x_structure=('missing_name', self.lb), y_structure=('label', self.le, 1))
         with pytest.raises(KeyError):
+            bs = BatchShaper(x_structure=('missing_name', self.lb),
+                             y_structure=('label', self.le, 1),
+                             data_sample=self.df)
             batch = bs.transform(self.df)
 
     def test_init_with_data_sample(self):
@@ -108,7 +114,9 @@ class TestBatchShaper:
         pass
 
     def test_none_transformer(self):
-        bs = BatchShaper(x_structure=[('var1', self.lb), ('var2', None)], y_structure=('label', self.le))
+        bs = BatchShaper(x_structure=[('var1', self.lb), ('var2', None)],
+                         y_structure=('label', self.le),
+                         data_sample=self.df)
         batch = bs.transform(self.df)
         assert type(batch) == tuple
         assert len(batch) == 2
@@ -117,7 +125,9 @@ class TestBatchShaper:
         assert np.array_equal(batch[0][1], np.expand_dims(self.df['var2'].values, axis=-1))
 
     def test_const_component_int(self):
-        bs = BatchShaper(x_structure=[('var1', self.lb), (None, 0)], y_structure=('label', self.le))
+        bs = BatchShaper(x_structure=[('var1', self.lb), (None, 0)],
+                         y_structure=('label', self.le),
+                         data_sample=self.df)
         batch = bs.transform(self.df)
         assert type(batch) == tuple
         assert len(batch) == 2
@@ -127,7 +137,9 @@ class TestBatchShaper:
         assert batch[0][1].dtype == int
 
     def test_const_component_float(self):
-        bs = BatchShaper(x_structure=[('var1', self.lb), (None, 0.)], y_structure=('label', self.le))
+        bs = BatchShaper(x_structure=[('var1', self.lb), (None, 0.)],
+                         y_structure=('label', self.le),
+                         data_sample=self.df)
         batch = bs.transform(self.df)
         assert type(batch) == tuple
         assert len(batch) == 2
@@ -137,18 +149,23 @@ class TestBatchShaper:
         assert batch[0][1].dtype == float
 
     def test_const_component_str(self):
-        bs = BatchShaper(x_structure=[('var1', self.lb), (None, u'a')], y_structure=('label', self.le))
+        bs = BatchShaper(x_structure=[('var1', self.lb), (None, u'a')],
+                         y_structure=('label', self.le),
+                         data_sample=self.df)
         batch = bs.transform(self.df)
         assert type(batch) == tuple
         assert len(batch) == 2
         assert type(batch[0]) == list
         assert len(batch[0]) == 2
         assert np.all(batch[0][1] == 'a')
-        assert batch[0][1].dtype == '<U1' # single unicode character
+        assert batch[0][1].dtype == '<U1'  # single unicode character
 
     def test_metadata(self):
-        bs = BatchShaper(x_structure=[('var1', self.lb), (None, 0.)], y_structure=('label', self.le))
-        md = bs.get_metadata(self.df)
+        VarShaper._dummy_constant_counter = 0
+        bs = BatchShaper(x_structure=[('var1', self.lb), (None, 0.)],
+                         y_structure=('label', self.le),
+                         data_sample=self.df)
+        md = bs.metadata
         batch = bs.transform(self.df)
         assert type(md) is tuple
         assert len(md) == 2
@@ -178,8 +195,11 @@ class TestBatchShaper:
         assert md[1]['dtype'] == np.int64
 
     def test_dummy_var_naming(self):
-        bs = BatchShaper(x_structure=[('var1', self.lb), (None, 0.), (None, 1.)], y_structure=('label', self.le))
-        md = bs.get_metadata(self.df)
+        VarShaper._dummy_constant_counter = 0
+        bs = BatchShaper(x_structure=[('var1', self.lb), (None, 0.), (None, 1.)],
+                         y_structure=('label', self.le),
+                         data_sample=self.df)
+        md = bs.metadata
         assert type(md) is tuple
         assert len(md) == 2
         assert type(md[0]) is list
@@ -188,7 +208,7 @@ class TestBatchShaper:
         assert md[0][1]['name'] == 'dummy_constant_0'
         assert md[0][2]['name'] == 'dummy_constant_1'
         # test the counter resets with new metadata request
-        md = bs.get_metadata(self.df)
+        md = bs.metadata
         assert md[0][1]['name'] == 'dummy_constant_0'
         assert md[0][2]['name'] == 'dummy_constant_1'
 
@@ -200,14 +220,12 @@ class TestBatchShaper:
                 return 11,
 
             def transform(self, data):
-                return data.values
+                return data
 
         a = A()
-        bs = BatchShaper(x_structure=[('var1', self.lb), ('var1', a)], y_structure=('label', self.le))
-        # At this point, shape is not yet measured (fitted) and runtime error is expected
-        with pytest.raises(RuntimeError):
-            batch = bs.shape
-        bs.fit_shapes(self.df)
+        bs = BatchShaper(x_structure=[('var1', self.lb), ('var1', a)],
+                         y_structure=('label', self.le),
+                         data_sample=self.df)
         shapes = bs.shape
         assert type(shapes) == tuple
         assert type(shapes[0]) == list
@@ -224,22 +242,26 @@ class TestBatchShaper:
                 return 13
 
             def transform(self, data):
-                return data.values
+                return data
 
         a = A()
-        bs = BatchShaper(x_structure=[('var1', self.lb), ('var1', a)], y_structure=('label', self.le))
+        bs = BatchShaper(x_structure=[('var1', self.lb), ('var1', a)],
+                         y_structure=('label', self.le), data_sample=self.df)
         n_classes = bs.n_classes
         pass
 
     def test_inverse_transform(self):
         le2 = LabelEncoder().fit(self.df['var2'])
-        bs = BatchShaper(x_structure=('var1', self.lb), y_structure=[('label', self.le), ('var2', le2)])
+        bs = BatchShaper(x_structure=('var1', self.lb),
+                         y_structure=[('label', self.le), ('var2', le2)],
+                         data_sample=self.df)
         batch = bs.transform(self.df)
         inverse = bs.inverse_transform(batch[1])
         assert inverse.equals(self.df[['label', 'var2']])
         # Check inverse transform when constant field is in the structure
         bs = BatchShaper(x_structure=('var1', self.lb),
-                         y_structure=[('label', self.le), ('var2', le2), (None, 0.)])
+                         y_structure=[('label', self.le), ('var2', le2), (None, 0.)],
+                         data_sample=self.df)
         batch = bs.transform(self.df)
         # check that the constant field was added to the y output
         assert len(batch[1]) == 3
@@ -249,7 +271,8 @@ class TestBatchShaper:
         assert inverse.equals(self.df[['label', 'var2']])
         # Check inverse transform when direct mapping field is in the structure
         bs = BatchShaper(x_structure=('var1', self.lb),
-                         y_structure=[('label', self.le), ('var2', le2), ('var1', None)])
+                         y_structure=[('label', self.le), ('var2', le2), ('var1', None)],
+                         data_sample=self.df)
         batch = bs.transform(self.df)
         # check that the constant field was added to the y output
         assert len(batch[1]) == 3
@@ -257,15 +280,6 @@ class TestBatchShaper:
         # this is to make sure that constant field is decoded
         assert inverse.shape[1] == 3
         assert inverse.equals(self.df[['label', 'var2', 'var1']])
-        # Lastly, test that inverse transform raises an error when encoder is not None,
-        # but it does not have inverse transform method. E.g.('var1', 1.)
-        # To test that, we will need to use a hack because this is an incorrect element of a
-        # structure and it will be caught in transform method
-        # I will use batch shaper from above, but I will change its structure before calling
-        # inverse transform. This must not be done in normal use
-        bs.y_structure = [('label', self.le), ('var2', le2), ('var1', 1.)]
-        with pytest.raises(ValueError):
-            inverse = bs.inverse_transform(batch[1])
 
     def test_multiindex_xy(self):
         """ This test ensures that multiindex functionality works as expected. This function is used
@@ -281,7 +295,7 @@ class TestBatchShaper:
         assert df.columns.nlevels == 2
         assert 'x' in df
         assert 'y' in df
-        bs = BatchShaper(x_structure=('label', self.le), y_structure=('label', self.le))
+        bs = BatchShaper(x_structure=('label', self.le), y_structure=('label', self.le), data_sample=self.df)
         batch = bs.transform(df)
         assert type(batch) == tuple
         assert len(batch) == 2
@@ -296,12 +310,12 @@ class TestBatchShaper:
         """This is to test error handling of BatchShaper with regards to multiindex_xy_keys parameter"""
         with pytest.raises(ValueError):
             _ = BatchShaper(x_structure=('label', self.le), y_structure=('label', self.le),
-                             multiindex_xy_keys='x')
+                             multiindex_xy_keys='x', data_sample=self.df)
         with pytest.raises(ValueError):
             _ = BatchShaper(x_structure=('label', self.le), y_structure=('label', self.le),
-                             multiindex_xy_keys=('x', 'y', 'z'))
-        _ = BatchShaper(x_structure=('label', self.le), multiindex_xy_keys=('x', 'y'))
-        _ = BatchShaper(x_structure=('label', self.le), multiindex_xy_keys=(0, 1))
-        _ = BatchShaper(x_structure=('label', self.le), multiindex_xy_keys=(True, False))
+                             multiindex_xy_keys=('x', 'y', 'z'), data_sample=self.df)
+        _ = BatchShaper(x_structure=('label', self.le), multiindex_xy_keys=('x', 'y'), data_sample=self.df)
+        _ = BatchShaper(x_structure=('label', self.le), multiindex_xy_keys=(0, 1), data_sample=self.df)
+        _ = BatchShaper(x_structure=('label', self.le), multiindex_xy_keys=(True, False), data_sample=self.df)
 
 

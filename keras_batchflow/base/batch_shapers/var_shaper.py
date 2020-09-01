@@ -7,19 +7,18 @@ class VarShaper:
 
     _dummy_constant_counter = 0
 
-    def __init__(self, var_name, encoder, sample=None):
+    def __init__(self, var_name, encoder, data_sample=None):
         self._var_name = var_name
         # _name will be included in metadata for using in ML models, e.g. for naming input layers in Keras
         self._name = var_name
         self._encoder = encoder
-        self._dtype = None
-        self._decoded_dtype = None
         self._class = self._self_classify(var_name, encoder)
+        self._decoded_dtype, self._dtype = self._get_dtypes(data_sample)
         if self._class == "constant":
             # this is a class level counter to count all instances of constant class
             self._name = 'dummy_constant_' + str(self._dummy_constant_counter)
             type(self)._dummy_constant_counter += 1
-        self._shape = self._get_shape(var_name, encoder, sample)
+        self._shape = self._get_shape(var_name, encoder, data_sample)
         self._n_classes = self._get_n_classes(encoder)
 
     @staticmethod
@@ -63,6 +62,14 @@ class VarShaper:
         metadata['n_classes'] = self._n_classes
         return metadata
 
+    @property
+    def shape(self):
+        return self._shape
+
+    @property
+    def n_classes(self):
+        return self._n_classes
+
     def _get_shape(self, var_name, encoder, sample):
         if self._class in ["constant", "direct"]:
             return 1,
@@ -78,6 +85,30 @@ class VarShaper:
                 raise ValueError(f"Error: unable to determine encoded shape of variable {var_name} because neither "
                                  f"encoder {encoder} provided has attribute 'shape' nor data sample "
                                  f"provided to evaluate")
+
+    def _get_dtypes(self, sample):
+        """
+        This method identifies dtype of encoded format and original decoded dtype of the variable stored in
+        the original dataframe
+        :param encoder: None, scalar constant or encoder object
+        :param sample:
+        :return: a tuple (original dtype, encoded dtype)
+        """
+        if self._class in ["encoder", "direct"]:
+            if sample is None:
+                raise ValueError(f"Error: Unable to determine encoded and original data types without a data sample. "
+                                 f"Please provide a data sample in init")
+        if self._class == "encoder":
+            x = self._reshape(self.transform(sample))
+            return sample[self._var_name].dtype, x.dtype
+        elif self._class == "direct":
+            return sample[self._var_name].dtype, sample[self._var_name].dtype
+        elif self._class == "constant":
+            original_dtype = self._encoder.dtype if hasattr(self._encoder, "dtype") else type(self._encoder)
+            return original_dtype, np.array([self._encoder]).dtype
+        else:
+            RuntimeError(f"Error: the class type {self._encoder} is not supported in '_get_dtypes' method")
+
 
     def _get_n_classes(self, encoder):
         """
@@ -101,12 +132,12 @@ class VarShaper:
     def transform(self, data):
         if self._class in ["encoder", "direct"]:
             if self._var_name not in data:
-                raise ValueError(f"Error: column '{self._var_name}' is not available in data")
-            if self._decoded_dtype is None:
-                self._decoded_dtype = data[self._var_name].dtype
-        else:
-            # if constant, pick dtype from self._encoder type
-            self._decoded_dtype = np.array([self._encoder]).dtype
+                raise KeyError(f"Error: column '{self._var_name}' is not available in data")
+        #     if self._decoded_dtype is None:
+        #         self._decoded_dtype = data[self._var_name].dtype
+        # else:
+        #     # if constant, pick dtype from self._encoder type
+        #     self._decoded_dtype = self._encoder.dtype if hasattr(self._encoder, 'dtype') else type(self._encoder)
         if self._class == "encoder":
             # it has already been checked at init stage. It is redundant here
             # if not hasattr(self._encoder, 'transform'):
@@ -128,8 +159,8 @@ class VarShaper:
             x = data[self._var_name].values
         else:
             raise RuntimeError('Error: this should not have happened. Maybe it needs to be reported')
-        if self._dtype is None:
-            self._dtype = x.dtype
+        # if self._dtype is None:
+        #     self._dtype = x.dtype
         return self._reshape(x)
 
     def inverse_transform(self, df, encoded_data):
