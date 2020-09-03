@@ -93,7 +93,7 @@ class BatchGenerator:
     def metadata(self):
         batch = self._select_batch(0)
         batch = self._apply_batch_transforms(batch)
-        return self.batch_shaper.get_metadata(batch)
+        return self.batch_shaper.metadata
 
     def _apply_batch_transforms(self, batch):
         if self.batch_transforms is not None:
