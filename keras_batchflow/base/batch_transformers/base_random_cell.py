@@ -326,3 +326,6 @@ For above matrix, this element will be on last position. The solution will be lo
         else:
             batch[self._cols] = transformed
         return batch
+
+    def inverse_transform(self, batch):
+        return batch
