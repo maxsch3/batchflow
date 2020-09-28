@@ -5,6 +5,19 @@ from numbers import Number
 
 class VarShaper:
 
+    """
+    This class is a wrapper around encoder. It abstracts away the encoding of a single column into a
+    model-ready data. This class is used in BatchShaper where all leaves (a tuple (column name, encoder))
+    in a structure are replaced with equivalent VarShaper objects in a BatchShaper's constructor method
+    After that, BatchShaper use this equivalent structure of VarShaper objects rather than original
+    "human-readable" structure of tuples.
+
+    This class is a backend class and you normally would not need to use it manually.
+
+    It implements core interface functions like transform, inverse_transform,
+    as well as additional metadata functions like, shape, n_classes, dtype, etc.
+    """
+
     _dummy_constant_counter = 0
 
     def __init__(self, var_name, encoder, data_sample=None):
@@ -108,7 +121,6 @@ class VarShaper:
             return original_dtype, np.array([self._encoder]).dtype
         else:
             RuntimeError(f"Error: the class type {self._encoder} is not supported in '_get_dtypes' method")
-
 
     def _get_n_classes(self, encoder):
         """

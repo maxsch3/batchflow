@@ -132,7 +132,18 @@ class TestBatchGenerator:
                 batch[self.col_name] = 'Red'
                 return batch
 
-        bt1 = BatchTransformer()
+            def inverse_transform(self, batch):
+                return batch
+
+        class TransparentTransform(BatchTransformer):
+
+            def transform(self, batch):
+                return batch
+
+            def inverse_transform(self, batch):
+                return batch
+
+        bt1 = TransparentTransform()
         bt2 = TestTransform('label')
         bg = BatchGenerator(
             self.df,

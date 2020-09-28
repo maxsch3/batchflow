@@ -17,3 +17,6 @@ class BatchFork(BatchTransformer):
     def transform(self, batch):
         batch = pd.concat([batch]*len(self._levels), axis=1, keys=self._levels)
         return batch
+
+    def inverse_transform(self, batch):
+        return batch

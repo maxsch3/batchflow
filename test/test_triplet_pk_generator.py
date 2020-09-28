@@ -54,9 +54,17 @@ class TestTripletPKGenerator:
             assert batch[0].shape == (6, 1)
             assert batch[1].shape == (6, 1)
 
-
     def test_kwargs_pass_to_parent(self):
-        bt = BatchTransformer()
+
+        class TransparentTransform(BatchTransformer):
+
+            def transform(self, batch):
+                return batch
+
+            def inverse_transform(self, batch):
+                return batch
+
+        bt = TransparentTransform()
         tg = TripletPKGenerator(
             data=self.df,
             triplet_label='label',
