@@ -38,7 +38,7 @@ class BatchGenerator:
     """
 
     def __init__(self, data: pd.DataFrame, x_structure, y_structure=None,
-                 batch_transforms=None, batch_size=32, shuffle=True, train_mode=True):
+                 batch_transforms=None, batch_size=32, shuffle=True, train_mode=True, encoder_adaptor=None):
         self.data = data
         self.batch_size = batch_size
         self.shuffle = shuffle
@@ -46,7 +46,8 @@ class BatchGenerator:
         self.__check_batch_transformers(batch_transforms)
         self.batch_transforms = batch_transforms
         self.batch_shaper = BatchShaper(x_structure, y_structure,
-                                        data_sample=self._apply_batch_transforms(data.iloc[:min(data.shape[0], 10)]))
+                                        data_sample=self._apply_batch_transforms(data.iloc[:min(data.shape[0], 10)]),
+                                        encoder_adaptor=encoder_adaptor)
         self.indices = np.arange(self.data.shape[0])
         self.on_epoch_end()
 
