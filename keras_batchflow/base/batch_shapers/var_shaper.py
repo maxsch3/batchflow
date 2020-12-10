@@ -2,6 +2,10 @@ import numpy as np
 import pandas as pd
 from numbers import Number
 
+from .encoder_adaptor import IEncoderAdaptor
+from .numpy_encoder_adaptor import NumpyEncoderAdaptor
+from .pandas_encoder_adaptor import PandasEncoderAdaptor
+
 
 class VarShaper:
 
@@ -20,10 +24,11 @@ class VarShaper:
 
     _dummy_constant_counter = 0
 
-    def __init__(self, var_name, encoder, data_sample=None):
+    def __init__(self, var_name, encoder, data_sample=None, encoder_adaptor=None):
         self._var_name = var_name
         # _name will be included in metadata for using in ML models, e.g. for naming input layers in Keras
         self._name = var_name
+        self._encoder_adaptor = self._build_encoder_adaptor(encoder_adaptor)
         self._encoder = encoder
         self._class = self._self_classify(var_name, encoder)
         self._decoded_dtype, self._dtype = self._get_dtypes(data_sample)
@@ -33,6 +38,24 @@ class VarShaper:
             type(self)._dummy_constant_counter += 1
         self._shape = self._get_shape(var_name, encoder, data_sample)
         self._n_classes = self._get_n_classes(encoder)
+
+    def _build_encoder_adaptor(self, encoder_adaptor):
+        """
+        This method makes encoder adaptor class that utilises polymorphism to accommodate encoders that require
+        different data types. The encoder adaptor instance takes care of
+        :param encoder_adaptor: str ('numpy' or 'pandas') or a custom class derived from IEncoderAdaptor
+        :return: instance of IEncoderAdaptor
+        """
+        if (encoder_adaptor == 'numpy') or (encoder_adaptor is None):
+            adaptor = NumpyEncoderAdaptor()
+        elif encoder_adaptor == 'pandas':
+            adaptor = PandasEncoderAdaptor()
+        elif isinstance(encoder_adaptor, IEncoderAdaptor):
+            adaptor = encoder_adaptor
+        else:
+            raise TypeError(f"Error: The encoder adaptor must be a string ('numpy' or 'pandas') or an instance of a "
+                            f"custom class derived from IEncoderAdaptor")
+        return adaptor
 
     @staticmethod
     def _self_classify(var_name, encoder):
@@ -58,6 +81,8 @@ class VarShaper:
                 return "direct"
             if not hasattr(encoder, "transform"):
                 raise ValueError(f"Error: encoder provided for column '{var_name}' has no 'transform' method")
+            if not hasattr(encoder, "inverse_transform"):
+                raise ValueError(f"Error: encoder provided for column '{var_name}' has no 'inverse_transform' method")
             return "encoder"
         else:
             raise ValueError(f"Error: variable name must be a str or None. Got {type(var_name)}")
@@ -155,20 +180,21 @@ class VarShaper:
             # if not hasattr(self._encoder, 'transform'):
             #     raise ValueError(f"Error: encoders of class {type(self._encoder).__name__} provided in structure "
             #                      f"definition has no 'transform' method")
+            encoder_input = self._encoder_adaptor.transform(data[self._var_name])
             try:
-                x = getattr(self._encoder, 'transform')(data[self._var_name].values)
+                x = self._encoder.transform(encoder_input)
             except ValueError as e:
                 raise ValueError(f'Error: ValueError exception occured while calling '
                                  f'{type(self._encoder).__name__}.transform method. Most likely you used'
                                  f' 2D encoders. At the moment, only 1D transformers are supported. Please use 1D '
                                  f'variant or use wrapper. The error was: {e}')
-            except Exception as e:
-                raise RuntimeError(f'Error: unknown error while calling transform method of '
-                                   f'{type(self._encoder).__name__} class provided in structure. The error was: {e}')
+            # except Exception as e:
+            #     raise RuntimeError(f'Error: unknown error while calling transform method of '
+            #                        f'{type(self._encoder).__name__} class provided in structure. The error was: {e}')
         elif self._class == "constant":
             x = np.repeat(self._encoder, data.shape[0])
         elif self._class == "direct":
-            x = data[self._var_name].values
+            x = data[self._var_name].to_numpy()
         else:
             raise RuntimeError('Error: this should not have happened. Maybe it needs to be reported')
         # if self._dtype is None:
@@ -192,13 +218,13 @@ class VarShaper:
             # changes. These cases have structure entry like this ('col_name', None)
             df[self._var_name] = pd.Series(np.squeeze(encoded_data), dtype=self._decoded_dtype)
         elif self._class == "encoder":
-            if not hasattr(self._encoder, "inverse_transform"):
-                raise ValueError(f"Error: encoder provided for column '{self._var_name}' has no 'inverse_transform' method")
-            if not hasattr(self._encoder, 'inverse_transform'):
-                raise ValueError('Error: the encoders {} used for column {} has no inverse_transform method'
-                                 .format(type(self._encoder).__name__, self._var_name))
-            it = self._encoder.inverse_transform(encoded_data)
-            df[self._var_name] = pd.Series(it, dtype=self._decoded_dtype)
+            # it has already been checked at init stage. It is redundant here
+            # if not hasattr(self._encoder, "inverse_transform"):
+            #     raise ValueError(f"Error: encoder provided for column '{self._var_name}' has no "
+            #     "'inverse_transform' method")
+            it = self._encoder_adaptor.inverse_transform(self._encoder.inverse_transform(encoded_data),
+                                                         dtype=self._decoded_dtype)
+            df[self._var_name] = it
 
     def _reshape(self, x: np.ndarray):
         if x.ndim == 1:

@@ -5,6 +5,9 @@ from keras_batchflow.base.batch_generators import BatchGenerator
 from keras_batchflow.base.batch_transformers import BatchTransformer
 from sklearn.preprocessing import LabelEncoder, LabelBinarizer, OneHotEncoder
 
+from keras_batchflow.base.batch_shapers.numpy_encoder_adaptor import NumpyEncoderAdaptor
+from keras_batchflow.base.batch_shapers.pandas_encoder_adaptor import PandasEncoderAdaptor
+
 
 class TestBatchGenerator:
 
@@ -220,6 +223,28 @@ class TestBatchGenerator:
         assert sh[0][0] == (3,)
         assert sh[0][1] == (1,)
         assert sh[1] == (1,)
+
+    def test_encoder_adaptor(self):
+        """
+        This test only makes sure the adaptor parameter is passed correctly
+        :return:
+        """
+        bg = BatchGenerator(
+            self.df,
+            x_structure=('var1', self.lb),
+            y_structure=('label', self.le),
+            shuffle=False,
+            encoder_adaptor='numpy'
+        )
+        assert isinstance(bg.batch_shaper.x_structure._encoder_adaptor, NumpyEncoderAdaptor)
+        bg = BatchGenerator(
+            self.df,
+            x_structure=('var1', self.lb),
+            y_structure=('label', self.le),
+            shuffle=False,
+            encoder_adaptor='pandas'
+        )
+        assert isinstance(bg.batch_shaper.x_structure._encoder_adaptor, PandasEncoderAdaptor)
 
 if __name__ == '__main__':
     pytest.main([__file__])

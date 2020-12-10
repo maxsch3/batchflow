@@ -5,6 +5,8 @@ from sklearn.preprocessing import LabelEncoder, LabelBinarizer, OneHotEncoder
 from keras_batchflow.base.batch_shapers.batch_shaper import BatchShaper
 from keras_batchflow.base.batch_shapers.var_shaper import VarShaper
 from keras_batchflow.base.batch_transformers import BatchFork
+from keras_batchflow.base.batch_shapers.numpy_encoder_adaptor import NumpyEncoderAdaptor
+from keras_batchflow.base.batch_shapers.pandas_encoder_adaptor import PandasEncoderAdaptor
 
 
 class TestBatchShaper:
@@ -223,6 +225,9 @@ class TestBatchShaper:
             def transform(self, data):
                 return data
 
+            def inverse_transform(self, data):
+                return data
+
         a = A()
         bs = BatchShaper(x_structure=[('var1', self.lb), ('var1', a)],
                          y_structure=('label', self.le),
@@ -243,6 +248,9 @@ class TestBatchShaper:
                 return 13
 
             def transform(self, data):
+                return data
+
+            def inverse_transform(self, data):
                 return data
 
         a = A()
@@ -347,3 +355,20 @@ class TestBatchShaper:
                          data_sample=data)
         tr = bs.transform(data)
 
+    def test_encoder_adaptor(self):
+        """
+        This test checks that encoder adaptor parameter is passed correctly to a VarShaper
+        """
+        bs = BatchShaper(x_structure=('label', self.le),
+                         y_structure=('label', self.le),
+                         data_sample=self.df)
+        # check that default is numpy adaptor
+        assert isinstance(bs.x_structure._encoder_adaptor, NumpyEncoderAdaptor)
+        assert isinstance(bs.y_structure._encoder_adaptor, NumpyEncoderAdaptor)
+        bs = BatchShaper(x_structure=('label', self.le),
+                         y_structure=('label', self.le),
+                         data_sample=self.df,
+                         encoder_adaptor='pandas')
+        # check that pandas has been correctly passed to var shapers
+        assert isinstance(bs.x_structure._encoder_adaptor, PandasEncoderAdaptor)
+        assert isinstance(bs.y_structure._encoder_adaptor, PandasEncoderAdaptor)

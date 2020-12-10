@@ -4,6 +4,9 @@ import pytest
 
 from sklearn.preprocessing import LabelEncoder, LabelBinarizer, OneHotEncoder
 from keras_batchflow.base.batch_shapers.var_shaper import VarShaper
+from keras_batchflow.base.batch_shapers.encoder_adaptor import IEncoderAdaptor
+from keras_batchflow.base.batch_shapers.numpy_encoder_adaptor import NumpyEncoderAdaptor
+from keras_batchflow.base.batch_shapers.pandas_encoder_adaptor import PandasEncoderAdaptor
 
 
 class A:
@@ -16,11 +19,59 @@ class A:
     def transform(self, data):
         return data
 
+    def inverse_transform(self, data):
+        return data
+
 
 class B:
 
     def transform(self, data):
         return np.zeros((data.shape[0], 15), dtype=np.int8)
+
+    def inverse_transform(self, data):
+        return data
+
+
+class NumpyOnlyEncoder:
+
+    def transform(self, data):
+        if not isinstance(data, np.ndarray):
+            raise TypeError(f"Error: this encoder only accepts numpy arrays. Got {type(data)}")
+        return data
+
+    def inverse_transform(self, data):
+        # if not isinstance(data, np.ndarray):
+        #     raise TypeError(f"Error: the model is supposed to return numpy array")
+        return data
+
+
+class PandasOnlyEncoder:
+
+    def transform(self, data):
+        if not isinstance(data, pd.Series):
+            raise TypeError(f"Error: this encoder only accepts pandas series. Got {type(data)}")
+        return data
+
+    def inverse_transform(self, data):
+        # if not isinstance(data, np.ndarray):
+        #     raise TypeError(f"Error: the model is supposed to return numpy array")
+        # return pd.Series(np.squeeze(data))
+        return data
+
+class CustomEncoderAdaptor(IEncoderAdaptor):
+
+    """
+    This class is to test that custom encoder adaptors are accepted
+    """
+
+    def __init__(self, custom_parameter):
+        self.custom_parameter = custom_parameter
+
+    def transform(self, x: pd.Series):
+        return x
+
+    def inverse_transform(self, x, dtype=None) -> pd.Series:
+        return x
 
 
 class TestVarShaper:
@@ -75,6 +126,19 @@ class TestVarShaper:
         vs = VarShaper('var1', self.lb, data_sample=self.df)
         assert vs.shape == (3,)
 
+    @pytest.mark.dependency(name='test_build_encoder_adaptor', depends=['test_self_classify'])
+    def test_build_encoder_adaptor(self):
+        vs = VarShaper('var1', self.lb, data_sample=self.df)
+        assert vs._encoder_adaptor is not None
+        assert isinstance(vs._encoder_adaptor, NumpyEncoderAdaptor)
+        vs = VarShaper('var1', self.lb, data_sample=self.df, encoder_adaptor='pandas')
+        assert isinstance(vs._encoder_adaptor, PandasEncoderAdaptor)
+        cea = CustomEncoderAdaptor(custom_parameter=10)
+        vs = VarShaper('var1', self.lb, data_sample=self.df, encoder_adaptor=cea)
+        assert isinstance(vs._encoder_adaptor, CustomEncoderAdaptor)
+        with pytest.raises(TypeError):
+            vs = VarShaper('var1', self.lb, data_sample=self.df, encoder_adaptor=1)
+
     @pytest.mark.dependency(name='test_n_classes', depends=['test_self_classify'])
     def test_n_classes(self):
         vs = VarShaper('var1', self.lb, data_sample=self.df)
@@ -96,6 +160,22 @@ class TestVarShaper:
         assert type(tr) == np.ndarray
         assert tr.shape == (self.df.shape[0], 3)
         assert tr.dtype.kind == "i"
+
+    @pytest.mark.dependency(name='test_transform_encoder_adaptor', depends=['test_get_shape'])
+    def test_transform_encoder_adaptor(self):
+        """
+        This tests effect of different encoder adaptors selected. Encoders will throw errors if adaptor
+        provides wrong data type
+        """
+        numpy_encoder = NumpyOnlyEncoder()
+        pandas_encoder = PandasOnlyEncoder()
+        vs = VarShaper('label', numpy_encoder, data_sample=self.df)
+        _ = vs.transform(self.df)
+        with pytest.raises(TypeError):
+            vs = VarShaper('label', numpy_encoder, data_sample=self.df, encoder_adaptor='pandas')
+        vs = VarShaper('label', pandas_encoder, data_sample=self.df, encoder_adaptor='pandas')
+        with pytest.raises(TypeError):
+            vs = VarShaper('label', pandas_encoder, data_sample=self.df)
 
     @pytest.mark.dependency(name='test_transform_direct', depends=['test_get_shape'])
     def test_transform_direct(self):
@@ -229,6 +309,31 @@ class TestVarShaper:
         assert df['var3'].dtype == self.df['var3'].dtype
         assert df['var3'].dtype.kind == 'i'
         assert df['var3'].equals(self.df['var3'])
+
+    @pytest.mark.dependency(name='test_inverse_transform_adaptors', depends=['test_inverse_transform_encoder'])
+    def test_inverse_transform_adaptors(self):
+        """
+        This tests checks that adaptors will be used correctly for inverse transformation. The standard adaptors
+        do have type checks in their inverse transform methods, so I will be using them with combination with
+        encoders returning numpy and pandas data to see that type errors are triggered correctly. This checks that
+        correct adaptor was used
+        :return:
+        """
+        numpy_encoder = NumpyOnlyEncoder()
+        pandas_encoder = PandasOnlyEncoder()
+        vs = VarShaper('label', numpy_encoder, data_sample=self.df)
+        tr = vs.transform(self.df)
+        df = self.df.copy()
+        _ = vs.inverse_transform(df, tr)
+        # but it must throw error when data returned by encoder is not numpy
+        with pytest.raises(TypeError):
+            _ = vs.inverse_transform(df, pd.Series(np.squeeze(tr)))
+        vs = VarShaper('label', pandas_encoder, data_sample=self.df, encoder_adaptor='pandas')
+        # when pandas adaptor is used it must throw error when data returned by encoder is not pandas
+        with pytest.raises(TypeError):
+            _ = vs.inverse_transform(df, tr)
+        # but should work fine if it is
+        _ = vs.inverse_transform(df, pd.Series(np.squeeze(tr)))
 
     @pytest.mark.dependency(name='test_inverse_transform_const', depends=['test_inverse_transform_encoder'])
     def test_inverse_transform_const(self):
