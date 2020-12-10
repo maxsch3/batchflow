@@ -1,1 +1,4 @@
 from keras_batchflow.base.batch_shapers import BatchShaper
+from keras_batchflow.base.batch_shapers import IEncoderAdaptor
+from keras_batchflow.base.batch_shapers import NumpyEncoderAdaptor
+from keras_batchflow.base.batch_shapers import PandasEncoderAdaptor

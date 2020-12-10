@@ -16,9 +16,12 @@ class BatchShaper:
     with train/test splitted datasets
     """
 
-    def __init__(self, x_structure, y_structure=None, data_sample=None, multiindex_xy_keys=('x', 'y')):
+    def __init__(self, x_structure, y_structure=None, data_sample=None, multiindex_xy_keys=None,
+                 encoder_adaptor=None):
+        multiindex_xy_keys = ('x', 'y') if multiindex_xy_keys is None else multiindex_xy_keys
         self._validate_multiindex_xy_keys(x_structure, y_structure, multiindex_xy_keys)
         self.multiindex_xy_keys = multiindex_xy_keys
+        self._encoder_adaptor = encoder_adaptor
         data_sample_x, data_sample_y = self._get_data_xy(data_sample)
         self.x_structure = self._create_shapers(structure=x_structure, data_sample=data_sample_x)
         self.y_structure = self._create_shapers(structure=y_structure, data_sample=data_sample_y)
@@ -63,7 +66,7 @@ class BatchShaper:
 
     def _create_shaper_func(self, data, leaf, **kwargs):
         self._check_structure_leaf(leaf)
-        return VarShaper(var_name=leaf[0], encoder=leaf[1], data_sample=data)
+        return VarShaper(var_name=leaf[0], encoder=leaf[1], data_sample=data, encoder_adaptor=self._encoder_adaptor)
 
     def _walk(self, data: pd.DataFrame, func, **kwargs):
         data_x, data_y = self._get_data_xy(data)
