@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from .batch_transformer import BatchTransformer
 
 
@@ -315,16 +316,25 @@ For above matrix, this element will be on last position. The solution will be lo
                 raise KeyError(f'Error: The data passed to {type(self).__name__} is not forked, while fork parameter '
                                f'is specified. Please add multiindex level to columns of your data or use DataFork '
                                f'batch transform before.')
-            subset = batch[self._fork][self._cols]
+            if self._fork not in batch.columns.get_level_values(0):
+                raise KeyError(f"Error: fork {self._fork} specified as a parameter 'data_fork' was not found in data. "
+                               f"The following forks were found: {set(batch.columns.get_level_values(0))}. Please "
+                               f"make sure you are using DataFork that is configured to provide this a fork with the"
+                               f"name specified.")
+            # the top level of multiinedex is dropped here to avoid a hassle of handling it in methods _make_mask and
+            # _make_augmented_version. This dropped level will be added later when merged back with the batch
+            subset = batch[self._fork][self._cols].copy()
         else:
-            subset = batch[self._cols]
+            subset = batch[self._cols].copy()
         mask = self._make_mask(subset)
         augmented_batch = self._make_augmented_version(subset)
-        transformed = subset.mask(mask.astype(bool), augmented_batch.values)
+        transformed = subset.mask(mask.astype(bool), augmented_batch)
         if self._fork:
-            batch.loc(axis=1)[self._fork, self._cols] = transformed.values
+            # in order for loc to work, the top level index must be restored
+            transformed.columns = pd.MultiIndex.from_product([[self._fork], transformed.columns])
+            batch.loc[:, (self._fork, self._cols)] = transformed
         else:
-            batch[self._cols] = transformed
+            batch.loc[:, self._cols] = transformed
         return batch
 
     def inverse_transform(self, batch):

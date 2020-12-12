@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 import numpy as np
 from scipy.stats import binom_test, chisquare
-from keras_batchflow.base.batch_transformers import BaseRandomCellTransform
+from keras_batchflow.base.batch_transformers import BaseRandomCellTransform, BatchFork
 
 
 class LocalVersionTransform(BaseRandomCellTransform):
@@ -14,6 +14,19 @@ class LocalVersionTransform(BaseRandomCellTransform):
         batch = batch.copy()
         for c in self._cols:
             batch[c] = ''
+        return batch
+
+
+class TestTransformInt(BaseRandomCellTransform):
+    """
+    BaseRandomCellTransform raise NotImplemented error in below function which does not allow to test
+    transform functionality. I'm re-defining this method here to be able to test it.
+    """
+
+    def _make_augmented_version(self, batch):
+        batch = batch.copy()
+        for c in self._cols:
+            batch[c] = 0
         return batch
 
 
@@ -187,6 +200,19 @@ class TestFeatureDropout:
         assert (batch1['x']['var1'] == '').all()
         assert (batch1['x']['var2'] == '').all()
         assert (batch1['x']['label'] != '').all()
+
+    def test_non_numpy_dtype(self):
+        """
+        This test is to make sure the transform does not convert data to numpy behind the scenes, causing
+        unpredictable dtype changes
+        :return:
+        """
+        data = pd.DataFrame({'var1': np.random.randint(low=0, high=10, size=100)}).astype('Int64')
+        data.iloc[0, 0] = None
+        data_forked = BatchFork().transform(data.copy())
+        ct = TestTransformInt([0., 1.], cols=['var1'], data_fork='x')
+        data_transformed = ct.transform(data_forked)
+        assert all(dt.name == 'Int64' for dt in data_transformed.dtypes)
 
 
     # def test_row_dist(self):
