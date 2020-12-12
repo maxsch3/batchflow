@@ -33,5 +33,5 @@ class ShuffleNoise(BaseRandomCellTransform):
     """
 
     def _make_augmented_version(self, batch):
-        batch1 = batch.apply(lambda x: x.sample(frac=1).values)
-        return batch1
+        augmented_batch = batch.apply(lambda x: x.sample(frac=1).values)
+        return augmented_batch
