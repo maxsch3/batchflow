@@ -1,12 +1,10 @@
 language: python
 python:
-#  - "2.7"
-#  - "3.4"
-#  - "3.5"
-  - "3.6"
-  - "3.7"
+  - "3.8"
+  - "3.9"
+  - "3.10"
 env:
-  - framework=TF1
+#  - framework=TF1
   - framework=TF2
 
 script:
@@ -16,7 +14,7 @@ jobs:
   include:
     - stage: deploy-test
       if: branch = master
-      python: "3.6"
+      python: "3.10"
       script: skip
       install:
         - pip install -r requirements_tf1.txt
@@ -34,7 +32,7 @@ jobs:
             branch: master
     - stage: deploy-prod
       if: tag IS present
-      python: "3.6"
+      python: "3.10"
       script: skip
       install:
         - pip install -r requirements_tf1.txt
