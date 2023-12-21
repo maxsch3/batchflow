@@ -159,11 +159,15 @@ class TestFeatureDropout:
 
     def test_transform_many_cols(self):
         ct = LocalVersionTransform([.0, 1.], cols=['var1', 'var2'])
-        batch = ct.transform(self.df.copy())
+        # make a bigger batch to make sure augmenatation will always be used on the batch
+        # when batch is small there is a small chance the batch will sieve through without augmentation due to its
+        # random nature
+        seed_df = self.df.sample(100, replace=True)
+        batch = ct.transform(seed_df.copy())
         assert isinstance(batch, pd.DataFrame)
-        assert batch.shape == self.df.shape
-        assert not batch.equals(self.df)
-        batch = self.df.copy()
+        assert batch.shape == seed_df.shape
+        assert not batch.equals(seed_df)
+        batch = seed_df.copy()
         batch1 = ct.transform(batch)
         # test if transform does in-place transform
         assert batch1.equals(batch)
