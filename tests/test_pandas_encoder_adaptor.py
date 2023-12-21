@@ -34,7 +34,7 @@ class TestPandasEncoderAdaptor:
         pea = PandasEncoderAdaptor()
         tr = pea.inverse_transform(data)
         assert isinstance(tr, pd.Series)
-        assert np.issubdtype(tr.dtype, np.int)
+        assert np.issubdtype(tr.dtype, np.int64)
         tr = pea.inverse_transform(data, dtype=np.float32)
         assert isinstance(tr, pd.Series)
         assert np.issubdtype(tr.dtype, np.float32)
