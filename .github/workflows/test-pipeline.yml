@@ -3,7 +3,8 @@ name: Python package
 on: [push]
 
 jobs:
-  test:
+  test-code:
+    name: "Test code"
 
     runs-on: ubuntu-latest
     strategy:
@@ -24,3 +25,22 @@ jobs:
         run: |
           pip install pytest pytest-cov pytest-dependency
           PYTHONPATH="$PYTHONPATH:./keras-batchflow" pytest tests --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
+
+  test-doc-build:
+    name: "Test documentation build"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r build_requirements.txt
+          pip install -e .
+      - name: Test doc build
+        run: |
+          mkdocs build --verbose --clean --strict
