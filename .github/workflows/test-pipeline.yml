@@ -33,7 +33,6 @@ jobs:
 
   test-doc-build:
     name: "Test documentation build"
-    if: branch != master
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
