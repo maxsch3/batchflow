@@ -3,9 +3,8 @@ name: Python package
 on:
   push:
     branches:
-      - '*'
       - '!master'
-  pull_request:
+
 
 jobs:
   test-code:
@@ -31,9 +30,8 @@ jobs:
           pip install pytest pytest-cov pytest-dependency
           PYTHONPATH="$PYTHONPATH:./keras-batchflow" pytest tests --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
 
-  test-doc-build:
-    name: "Test documentation build"
-    if: branch != master
+  page_build:
+    name: "Build documentation"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -47,6 +45,32 @@ jobs:
           pip install -r requirements.txt
           pip install -r build_requirements.txt
           pip install -e .
-      - name: Test doc build
+      - name: Build docs
         run: |
           mkdocs build --verbose --clean --strict
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: ./site
+
+  deploy_stage:
+    name: 'Deploy documentation to staging'
+    needs: page_build
+
+    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
+    permissions:
+      pages: write      # to deploy to Pages
+      id-token: write   # to verify the deployment originates from an appropriate source
+      actions: read     # to download an artifact uploaded by `actions/upload-pages-artifact@v3`
+
+    # Deploy to the github-pages environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    # Specify runner + deployment step
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
