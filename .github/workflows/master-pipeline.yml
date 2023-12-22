@@ -35,6 +35,7 @@ jobs:
     name: "Build and deploy documentation to staging"
     needs: test-code
     runs-on: ubuntu-latest
+    environment: github-pages-staging
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -56,3 +57,4 @@ jobs:
           branch: gh-pages # The branch the action should deploy to.
           folder: site
           repository-name: maxsch3/keras-batchflow-test
+          token: ${{ secrets.GH_DEPLOY_SECRET }}
