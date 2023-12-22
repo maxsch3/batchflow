@@ -33,6 +33,7 @@ jobs:
 
   page_build:
     name: "Build documentation"
+    needs: test-code
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -50,7 +51,7 @@ jobs:
         run: |
           mkdocs build --verbose --clean --strict
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v4
         with:
           path: ./site
 
