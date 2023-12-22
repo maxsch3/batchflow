@@ -54,5 +54,5 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages # The branch the action should deploy to.
-          folder: build
+          folder: site
           repository-name: maxsch3/keras-batchflow-test
