@@ -57,4 +57,4 @@ jobs:
           branch: gh-pages # The branch the action should deploy to.
           folder: site
           repository-name: maxsch3/keras-batchflow-test
-          token: ${{ secrets.GH_DEPLOY_SECRET }}
+          ssh-key: ${{ secrets.GH_DEPLOY_SECRET }}
