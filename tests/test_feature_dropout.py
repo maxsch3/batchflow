@@ -34,10 +34,11 @@ class TestFeatureDropout:
         assert binom_test(b, 1000, 0.6) > 0.01
 
     def test_cols_dist(self):
+        sample_size = 1000
         fd = FeatureDropout([0., 1.], ['var1', 'var2', 'label'], drop_values='', col_probs=[.5, .3, .2])
-        batch = fd.transform(self.df.sample(1000, replace=True))
+        batch = fd.transform(self.df.sample(sample_size, replace=True))
         b = (batch == '').sum(axis=0)
-        c, p = chisquare(b, [520, 300, 180])
+        c, p = chisquare(b, [sample_size * .5, sample_size * .3, sample_size * .2])
         assert p > 0.001
 
     def test_uniform_col_dist(self):
