@@ -36,7 +36,7 @@ jobs:
         with:
           path: ./site
 
-  pypi-build:
+  pypi_build:
     name: Build pypi package
     runs-on: ubuntu-latest
     steps:
