@@ -55,7 +55,11 @@ jobs:
       - name: Build pypi package
         run: |
           python -m build
-          ls -l ./dist
+      - name: Upload build package as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: python-package-distributions
+          path: dist/
 
   deploy_page:
     name: 'Deploy release documentation'
@@ -78,3 +82,24 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  deploy_pypi:
+    name: Publish to pypi
+    needs: [page_build, pypi_build]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/keras-batchflow
+    permissions:
+      id-token: write
+    steps:
+      - name: Download all the dists
+        uses: actions/download-artifact@v3
+        with:
+          name: python-package-distributions
+          path: dist/
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
