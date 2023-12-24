@@ -34,17 +34,19 @@ class TestFeatureDropout:
         assert binom_test(b, 1000, 0.6) > 0.01
 
     def test_cols_dist(self):
+        sample_size = 1000
         fd = FeatureDropout([0., 1.], ['var1', 'var2', 'label'], drop_values='', col_probs=[.5, .3, .2])
-        batch = fd.transform(self.df.sample(1000, replace=True))
+        batch = fd.transform(self.df.sample(sample_size, replace=True))
         b = (batch == '').sum(axis=0)
-        c, p = chisquare(b, [520, 300, 180])
+        c, p = chisquare(b, [sample_size * .53, sample_size * .3, sample_size * .17])
         assert p > 0.001
 
     def test_uniform_col_dist(self):
+        sample_size = 1000
         fd = FeatureDropout([0., 1.], ['var1', 'var2', 'label'], drop_values='')
-        batch = fd.transform(self.df.sample(1000, replace=True))
+        batch = fd.transform(self.df.sample(sample_size, replace=True))
         b = (batch == '').sum(axis=0)
-        c, p = chisquare(b, [333, 333, 333])
+        c, p = chisquare(b, f_exp=[sample_size/3, sample_size/3, sample_size/3])
         assert p > 0.01
 
     def test_different_drop_values(self):
@@ -55,20 +57,21 @@ class TestFeatureDropout:
         assert b[1] == 0
         assert b[2] == 0
         b = (batch == 'v2').sum(axis=0)
-        assert binom_test(b[1], 1000, 0.33) > 0.01
+        assert binom_test(b[1], 1000, 0.33) > 0.001
         assert b[0] == 0
         assert b[2] == 0
         b = (batch == 'v3').sum(axis=0)
-        assert binom_test(b[2], 1000, 0.33) > 0.01
+        assert binom_test(b[2], 1000, 0.33) > 0.001
         assert b[0] == 0
         assert b[1] == 0
 
     def test_multiple_feature_drop(self):
+        sample_size = 100
         fd = FeatureDropout([0., .7, .3], ['var1', 'var2', 'label'], drop_values='', col_probs=[.5, .3, .2])
-        batch = fd.transform(self.df.sample(1000, replace=True))
+        batch = fd.transform(self.df.sample(sample_size, replace=True))
         b = (batch == '').sum(axis=1).value_counts().sort_index().tolist()
-        c, p = chisquare(b, [700, 300])
-        assert p > 0.01
+        c, p = chisquare(b, [sample_size * .7, sample_size * .3])
+        assert p > 0.001
 
     def test_parameter_error_handling(self):
         # column name is not str

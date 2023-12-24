@@ -20,14 +20,16 @@ class TestNumpyEncoderAdaptor:
 
     def test_transform_integer_array(self):
         """
-        This tests that pandas specific IntegerArray is converted into numpy format
+        This tests that pandas specific IntegerArray is converted into numpy format.
+        IntergerArray of type "Int64" in pandas is a very handy integer data type which supports Nones and does
+        not require conversion to float data type
         :return:
         """
         data = pd.Series([1, 2, 4, 5], dtype="Int64")
         nea = NumpyEncoderAdaptor()
         tr = nea.transform(data)
         assert isinstance(tr, np.ndarray)
-        assert np.issubdtype(tr.dtype, np.object)
+        assert np.issubdtype(tr.dtype, object)
 
     def test_transform_datetime(self):
         """
@@ -45,7 +47,7 @@ class TestNumpyEncoderAdaptor:
         nea = NumpyEncoderAdaptor()
         tr = nea.inverse_transform(data)
         assert isinstance(tr, pd.Series)
-        assert np.issubdtype(tr.dtype, np.int)
+        assert np.issubdtype(tr.dtype, np.int64)
         tr = nea.inverse_transform(data, dtype=np.float32)
         assert isinstance(tr, pd.Series)
         assert np.issubdtype(tr.dtype, np.float32)
