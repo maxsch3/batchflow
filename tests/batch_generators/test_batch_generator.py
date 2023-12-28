@@ -170,16 +170,18 @@ class TestBatchGenerator:
             shuffle=False,
             batch_size=3,
         )
-        trf = bg.transform(self.df)
-        assert type(trf) == tuple
-        assert len(trf) == 2
-        assert type(trf[0]) == list
-        assert len(trf[0]) == 2
-        assert type(trf[1]) == np.ndarray
-        assert trf[1].shape == (8, 1)
-        trf = bg.transform(self.df, return_y=False)
-        assert type(trf) == list
-        assert len(trf) == 2
+        batch = bg.transform(self.df)
+        assert type(batch) == tuple
+        assert len(batch) == 2
+        assert type(batch[0]) == list
+        assert len(batch[0]) == 2
+        assert type(batch[1]) == np.ndarray
+        assert batch[1].shape == (8, 1)
+        batch = bg.transform(self.df, return_y=False)
+        assert isinstance(batch, tuple)
+        assert len(batch) == 1
+        assert type(batch[0]) == list
+        assert len(batch[0]) == 2
 
     def test_inverse_transform(self):
         # batch size equals to dataset size
@@ -205,7 +207,9 @@ class TestBatchGenerator:
             shuffle=False,
         )
         batch = bg[0]
-        assert type(batch) == np.ndarray
+        assert isinstance(batch, tuple)
+        assert len(batch) == 1
+        assert isinstance(batch[0], np.ndarray)
 
     def test_shapes(self):
         le = LabelEncoder().fit(self.df['var2'])
