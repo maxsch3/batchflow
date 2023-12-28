@@ -29,7 +29,7 @@ class BatchShaper:
         self.__dummy_constant_counter = 0
 
     def transform(self, data: pd.DataFrame, **kwargs):
-        return self._walk(data, self._transform_func, **kwargs)
+        return self._shape_batch(data, self._transform_func, **kwargs)
 
     def inverse_transform(self, y):
         df = pd.DataFrame()
@@ -38,15 +38,15 @@ class BatchShaper:
 
     @property
     def shape(self):
-        return self._walk(pd.DataFrame(), self._shape_func)
+        return self._shape_batch(pd.DataFrame(), self._shape_func)
 
     @property
     def n_classes(self):
-        return self._walk(pd.DataFrame(), self._n_classes_func)
+        return self._shape_batch(pd.DataFrame(), self._n_classes_func)
 
     @property
     def metadata(self):
-        return self._walk(pd.DataFrame(), self._metadata_func)
+        return self._shape_batch(pd.DataFrame(), self._metadata_func)
 
     def _validate_multiindex_xy_keys(self, x_structure, y_structure, multiindex_xy_keys):
         if type(multiindex_xy_keys) is not tuple:
@@ -68,7 +68,17 @@ class BatchShaper:
         self._check_structure_leaf(leaf)
         return VarShaper(var_name=leaf[0], encoder=leaf[1], data_sample=data, encoder_adaptor=self._encoder_adaptor)
 
-    def _walk(self, data: pd.DataFrame, func, **kwargs):
+    def _shape_batch(self, data: pd.DataFrame, func, **kwargs):
+        """
+        This method forms a batch. Depending on the functions provided it can return different data shaped the same way:
+         - batch-shaped data for keras and tensorflow fit/predict, e.g. ([ndarray, ndarray], ndarray)
+         - component shapes structure, e.g. ([(None, 2), (None, 5)], (None, 2)) for the same example
+         - number of classes for categorical inputs, e.g. ([10, 3], 2)
+        :param data: pandas dataframe with the data
+        :param func: a function defining the output (self._shape_func, self._transform_func, self._n_classes_func)
+        :param kwargs:
+        :return:
+        """
         data_x, data_y = self._get_data_xy(data)
         x = self._walk_structure(data_x, self.x_structure, func)
         return_y = self.y_structure is not None
@@ -78,7 +88,7 @@ class BatchShaper:
             y = self._walk_structure(data_y, self.y_structure, func, **kwargs)
             return x, y
         else:
-            return x
+            return x,
 
     def _walk_structure(self, data: pd.DataFrame, struc, func, **kwargs):
         """This will call a func on tuples detected as leafs. For branches, it will call itself recursively until a
