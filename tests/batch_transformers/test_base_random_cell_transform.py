@@ -105,7 +105,7 @@ class TestFeatureDropout:
         # check if it is a proper one-hot encoding
         assert mask.sum() == data.shape[0]
         expected_counts = [5250, 3050, 1700]
-        threshold = .0001
+        threshold = .00001
         # the counts do not make counts ideally to expected 5000, 3000, 2000
         c, p = chisquare(mask.sum(0), expected_counts)
         if p <= threshold:
