@@ -35,7 +35,7 @@ class BatchGenerator:
     - **shuffle** - (optional) *bool*, if true, the input dataframe is shuffled before each new epoch.
         **Default: False**
     - **train_mode** - (optional) *bool*. If true, both X and Y are returned, otherwise only X is returned
-    - **encoder_adapter** - (optional) *str* or a single instance of a class derived from
+    - **encoder_adaptor** - (optional) *str* or a single instance of a class derived from
         keras_batchflow.base.batch_shapers.IEncoderAdaptor class. String values supported: 'numpy' and 'pandas'. If
         not provided, 'numpy' is used. This parameter sets format that encoders are using. Sklearn encoders are
         created for numpy arrays hence the default value is numpy. If your encoders require pandas format, use
