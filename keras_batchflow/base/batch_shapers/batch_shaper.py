@@ -52,10 +52,10 @@ class BatchShaper:
         if type(multiindex_xy_keys) is not tuple:
             raise ValueError('Error: srtuct_index parameter must be a tuple')
         if (len(multiindex_xy_keys) < 2) and y_structure:
-            raise ValueError(f'Error: when y_structure is not None, struct_index must have two values. '
+            raise ValueError(f'Error: when y_structure is not None, multiindex_xy_keys must have two values. '
                              f'got {len(multiindex_xy_keys)}')
         if len(multiindex_xy_keys) > 2:
-            raise ValueError(f'Error: struct_index must not be longer than 2. Got {len(multiindex_xy_keys)}')
+            raise ValueError(f'Error: multiindex_xy_keys must not be longer than 2. Got {len(multiindex_xy_keys)}')
         if len(multiindex_xy_keys) != len(set(multiindex_xy_keys)):
             raise ValueError(f"Error: All elements of 'multiindex_xy_keys' parameter must be unique")
 
@@ -186,9 +186,9 @@ class BatchShaper:
         elif nlevels == 2:
             # define generator that will
             if not all([name in data for name in self.multiindex_xy_keys]):
-                raise KeyError(f"Error: of the indices defined in struct_index parameter was not found in data. "
-                               f"Please check the parameter, input data or batch transforms, such as BatchFork, "
-                               f"'that might add the required indices. If you used BatchFork, please check that "
-                               f"its parameter 'levels' is aligned with parameter 'multiindex_xy_keys' of the "
-                               f"BatchShaper.")
+                raise KeyError(f"Error: one or more index, defined in multiindex_xy_keys parameter, was not found "
+                               f"in the data. Please check the parameter, input data or batch transforms, such as "
+                               f"BatchFork, 'that might add the required indices. If you used BatchFork, "
+                               f"please check that its parameter 'levels' is aligned with parameter "
+                               f"'multiindex_xy_keys' of the BatchShaper.")
             return tuple([data[name] for name in self.multiindex_xy_keys])
