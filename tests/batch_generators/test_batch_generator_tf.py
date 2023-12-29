@@ -46,16 +46,16 @@ class TestBatchGeneratorTF:
         # check that BaseBatch generator is resolved before SequenceTF
         assert i1 < i2
 
-    def test_fit_generator_without_validation(self):
+    def test_fit_without_validation(self):
         # declare a batch generator
         tf_bg = BatchGeneratorTF(self.data, x_structure=('x1', None), y_structure=('y1', self.y1_enc))
         inp = tf.keras.layers.Input(shape=(1,))
         x = tf.keras.layers.Dense(4, activation='softmax')(inp)
         tf_model = tf.keras.models.Model(inp, x)
         tf_model.compile('adam', 'sparse_categorical_crossentropy')
-        tf_model.fit_generator(tf_bg, epochs=1)
+        tf_model.fit(tf_bg, epochs=1)
 
-    def test_fit_generator_with_validation(self):
+    def test_fit_with_validation(self):
         # declare a batch generator
         train, test = train_test_split(self.data, test_size=.2)
         train_bg = BatchGeneratorTF(train, x_structure=('x1', None), y_structure=('y1', self.y1_enc))
@@ -64,16 +64,16 @@ class TestBatchGeneratorTF:
         x = tf.keras.layers.Dense(4, activation='softmax')(inp)
         tf_model = tf.keras.models.Model(inp, x)
         tf_model.compile('adam', 'sparse_categorical_crossentropy')
-        tf_model.fit_generator(train_bg, epochs=1, validation_data=test_bg)
+        tf_model.fit(train_bg, epochs=1, validation_data=test_bg)
 
-    def test_fit_generator_multiple_epochs(self):
+    def test_fit_multiple_epochs(self):
         # declare a batch generator
         tf_bg = BatchGeneratorTF(self.data, x_structure=('x1', None), y_structure=('y1', self.y1_enc))
         inp = tf.keras.layers.Input(shape=(1,))
         x = tf.keras.layers.Dense(4, activation='softmax')(inp)
         tf_model = tf.keras.models.Model(inp, x)
         tf_model.compile('adam', 'sparse_categorical_crossentropy')
-        tf_model.fit_generator(tf_bg, epochs=2)
+        tf_model.fit(tf_bg, epochs=2)
 
     def test_multiple_inputs(self):
         keras_bg = BatchGeneratorTF(self.data, x_structure=[('x1', None), ('x2', None)],
@@ -84,7 +84,7 @@ class TestBatchGeneratorTF:
         x = tf.keras.layers.Dense(4, activation='softmax')(x)
         keras_model = tf.keras.models.Model([inp1, inp2], x)
         keras_model.compile('adam', 'sparse_categorical_crossentropy')
-        keras_model.fit_generator(keras_bg, epochs=2)
+        keras_model.fit(keras_bg, epochs=2)
 
     def test_multiple_inputs_outputs(self):
         keras_bg = BatchGeneratorTF(self.data, x_structure=[('x1', None), ('x2', None)],
@@ -96,7 +96,7 @@ class TestBatchGeneratorTF:
         y2 = tf.keras.layers.Dense(5, activation='softmax')(x)
         keras_model = tf.keras.models.Model([inp1, inp2], [y1, y2])
         keras_model.compile('adam', 'sparse_categorical_crossentropy')
-        keras_model.fit_generator(keras_bg, epochs=2)
+        keras_model.fit(keras_bg, epochs=2)
 
     def test_predict_with_y(self):
         keras_bg = BatchGeneratorTF(self.data, x_structure=('x1', None), y_structure=('y1', self.y1_enc))
@@ -104,7 +104,7 @@ class TestBatchGeneratorTF:
         x = tf.keras.layers.Dense(4, activation='softmax')(inp)
         keras_model = tf.keras.models.Model(inp, x)
         keras_model.compile('adam', 'sparse_categorical_crossentropy')
-        pred = keras_model.predict_generator(keras_bg, verbose=1)
+        pred = keras_model.predict(keras_bg, verbose=1)
         assert type(pred) == np.ndarray
 
     def test_predict_without_y(self):
@@ -113,7 +113,7 @@ class TestBatchGeneratorTF:
         x = tf.keras.layers.Dense(4, activation='softmax')(inp)
         keras_model = tf.keras.models.Model(inp, x)
         keras_model.compile('adam', 'sparse_categorical_crossentropy')
-        pred = keras_model.predict_generator(keras_bg, verbose=1)
+        pred = keras_model.predict(keras_bg, verbose=1)
         assert type(pred) == np.ndarray
 
     @skip_tf1
