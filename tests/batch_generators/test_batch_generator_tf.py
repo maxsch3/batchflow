@@ -76,7 +76,7 @@ class TestBatchGeneratorTF:
         tf_model.fit(tf_bg, epochs=2)
 
     def test_multiple_inputs(self):
-        keras_bg = BatchGeneratorTF(self.data, x_structure=[('x1', None), ('x2', None)],
+        keras_bg = BatchGeneratorTF(self.data, x_structure=(('x1', None), ('x2', None)),
                                   y_structure=('y1', self.y1_enc))
         inp1 = tf.keras.layers.Input(shape=(1,))
         inp2 = tf.keras.layers.Input(shape=(1,))
@@ -87,7 +87,7 @@ class TestBatchGeneratorTF:
         keras_model.fit(keras_bg, epochs=2)
 
     def test_multiple_inputs_outputs(self):
-        keras_bg = BatchGeneratorTF(self.data, x_structure=[('x1', None), ('x2', None)],
+        keras_bg = BatchGeneratorTF(self.data, x_structure=(('x1', None), ('x2', None)),
                                   y_structure=[('y1', self.y1_enc), ('y2', self.y2_enc)])
         inp1 = tf.keras.layers.Input(shape=(1,))
         inp2 = tf.keras.layers.Input(shape=(1,))
