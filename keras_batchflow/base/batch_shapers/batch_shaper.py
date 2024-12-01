@@ -97,10 +97,11 @@ class BatchShaper:
             ret = func(data=data, leaf=struc, **kwargs)
             return ret
         elif type(struc) in [list, tuple]:
-            ret = [self._walk_structure(data, s, func, **kwargs) for s in struc]
-            # we always return lists as tuples as tensorflow wants x and y to be tuples in case of multiple
-            # components
-            return tuple(ret)
+            walked_structure = [self._walk_structure(data, s, func, **kwargs) for s in struc]
+            if isinstance(struc, tuple):
+                return tuple(walked_structure)
+            else:
+                return walked_structure
         else:
             raise ValueError('Error: structure definition in {} class only supports lists and tuples, but {}'
                              'was found'.format(type(self).__name__, type(struc)))

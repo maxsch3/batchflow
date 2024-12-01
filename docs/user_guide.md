@@ -59,11 +59,11 @@ embark_encoder = LabelEncoder().fit(titanic_data['Embarked'])
 cabinclass_encoder = LabelEncoder().fit(titanic_data['Pclass'])
 
 train_generator = BatchGenerator(titanic_data, 
-                                 x_structure=[
+                                 x_structure=(
                                     ('Embarked', embark_encoder),
                                     ('Pclass', cabinclass_encoder),
-                                    ('Age', None)                    
-                                 ],
+                                    ('Age', None)
+                                 ),
                                  y_structure=('Survived', None),
                                  batch_size=32,
                                  shuffle=True

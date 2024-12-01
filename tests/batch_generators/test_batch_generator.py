@@ -165,7 +165,7 @@ class TestBatchGenerator:
         le = LabelEncoder().fit(self.df['var2'])
         bg = BatchGenerator(
             self.df,
-            x_structure=[('var1', self.lb), ('var2', le)],
+            x_structure=(('var1', self.lb), ('var2', le)),
             y_structure=('label', self.le),
             shuffle=False,
             batch_size=3,
@@ -182,6 +182,19 @@ class TestBatchGenerator:
         assert len(batch) == 1
         assert type(batch[0]) == tuple
         assert len(batch[0]) == 2
+
+        #test the same with x_structure a list
+        bg = BatchGenerator(
+            self.df,
+            x_structure=[('var1', self.lb), ('var2', le)],
+            y_structure=('label', self.le),
+            shuffle=False,
+            batch_size=3,
+        )
+        batch = bg.transform(self.df)
+        assert type(batch) == tuple
+        assert len(batch) == 2
+        assert type(batch[0]) == list
 
     def test_inverse_transform(self):
         # batch size equals to dataset size
@@ -215,7 +228,7 @@ class TestBatchGenerator:
         le = LabelEncoder().fit(self.df['var2'])
         bg = BatchGenerator(
             self.df,
-            x_structure=[('var1', self.lb), ('var2', le)],
+            x_structure=(('var1', self.lb), ('var2', le)),
             y_structure=('label', self.le),
             shuffle=False,
         )
@@ -227,6 +240,17 @@ class TestBatchGenerator:
         assert sh[0][0] == (3,)
         assert sh[0][1] == (1,)
         assert sh[1] == (1,)
+        #test the same with x_structure a list
+        bg = BatchGenerator(
+            self.df,
+            x_structure=[('var1', self.lb), ('var2', le)],
+            y_structure=('label', self.le),
+            shuffle=False,
+        )
+        sh = bg.shapes
+        assert type(sh) == tuple
+        assert len(sh) == 2
+        assert type(sh[0]) == list
 
     def test_encoder_adaptor(self):
         """

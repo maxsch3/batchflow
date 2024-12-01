@@ -38,7 +38,7 @@ label_enc = LabelBinarizer().fit(df['label'])
 # define a batch generator
 train_gen = BatchGenerator(
     df,
-    x_structure=[('var1', var1_enc), ('var2', var2_enc)],
+    x_structure=(('var1', var1_enc), ('var2', var2_enc)),
     y_structure=('label', label_enc),
     batch_size=4,
     train_mode=True
@@ -49,7 +49,7 @@ The generator returns batches of format (x_structure, y_structure) and the shape
 
 ```python
 >>> train_gen.shape
-([(None, ), (None, )], (None, 3))
+(((None, ), (None, )), (None, 3))
 ``` 
 
 The first element is a x_structure and it is a list if two inputs. Both of them are outputs of LabelEncoders, that
