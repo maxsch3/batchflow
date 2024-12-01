@@ -69,7 +69,7 @@ class TestBatchShaper:
 
     def test_many_x(self, data, label_binarizer, label_encoder):
         lb2 = LabelBinarizer().fit(data['var2'])
-        bs = BatchShaper(x_structure=[('var1', label_binarizer), ('var2', lb2)],
+        bs = BatchShaper(x_structure=(('var1', label_binarizer), ('var2', lb2)),
                          y_structure=('label', label_encoder),
                          data_sample=data)
         batch = bs.transform(data)
@@ -87,7 +87,7 @@ class TestBatchShaper:
     def test_many_y(self, data, label_binarizer, label_encoder):
         lb2 = LabelBinarizer().fit(data['var2'])
         bs = BatchShaper(x_structure=('var1', label_binarizer),
-                         y_structure=[('label', label_encoder), ('var2', lb2)],
+                         y_structure=(('label', label_encoder), ('var2', lb2)),
                          data_sample=data)
         batch = bs.transform(data)
         assert type(batch) == tuple
@@ -111,7 +111,7 @@ class TestBatchShaper:
         so for predict, the generator must return a tuple (x,), where x is a list of inputs
         """
         lb2 = LabelBinarizer().fit(data['var2'])
-        batch_shaper = BatchShaper(x_structure=[('var1', label_binarizer), ('var2', lb2)], data_sample=data)
+        batch_shaper = BatchShaper(x_structure=(('var1', label_binarizer), ('var2', lb2)), data_sample=data)
         batch = batch_shaper.transform(data)
         assert isinstance(batch, tuple)
         assert len(batch) == 1
@@ -146,7 +146,7 @@ class TestBatchShaper:
         pass
 
     def test_none_transformer(self, data, label_binarizer, label_encoder):
-        bs = BatchShaper(x_structure=[('var1', label_binarizer), ('var2', None)],
+        bs = BatchShaper(x_structure=(('var1', label_binarizer), ('var2', None)),
                          y_structure=('label', label_encoder),
                          data_sample=data)
         batch = bs.transform(data)
@@ -157,7 +157,7 @@ class TestBatchShaper:
         assert np.array_equal(batch[0][1], np.expand_dims(data['var2'].values, axis=-1))
 
     def test_const_component_int(self, data, label_binarizer, label_encoder):
-        bs = BatchShaper(x_structure=[('var1', label_binarizer), (None, 0)],
+        bs = BatchShaper(x_structure=(('var1', label_binarizer), (None, 0)),
                          y_structure=('label', label_encoder),
                          data_sample=data)
         batch = bs.transform(data)
@@ -169,7 +169,7 @@ class TestBatchShaper:
         assert batch[0][1].dtype == int
 
     def test_const_component_float(self, data, label_binarizer, label_encoder):
-        bs = BatchShaper(x_structure=[('var1', label_binarizer), (None, 0.)],
+        bs = BatchShaper(x_structure=(('var1', label_binarizer), (None, 0.)),
                          y_structure=('label', label_encoder),
                          data_sample=data)
         batch = bs.transform(data)
@@ -181,7 +181,7 @@ class TestBatchShaper:
         assert batch[0][1].dtype == float
 
     def test_const_component_str(self, data, label_binarizer, label_encoder):
-        bs = BatchShaper(x_structure=[('var1', label_binarizer), (None, u'a')],
+        bs = BatchShaper(x_structure=(('var1', label_binarizer), (None, u'a')),
                          y_structure=('label', label_encoder),
                          data_sample=data)
         batch = bs.transform(data)
@@ -194,7 +194,7 @@ class TestBatchShaper:
 
     def test_metadata(self, data, label_binarizer, label_encoder):
         VarShaper._dummy_constant_counter = 0
-        bs = BatchShaper(x_structure=[('var1', label_binarizer), (None, 0.)],
+        bs = BatchShaper(x_structure=(('var1', label_binarizer), (None, 0.)),
                          y_structure=('label', label_encoder),
                          data_sample=data)
         md = bs.metadata
@@ -228,7 +228,7 @@ class TestBatchShaper:
 
     def test_dummy_var_naming(self, data, label_binarizer, label_encoder):
         VarShaper._dummy_constant_counter = 0
-        bs = BatchShaper(x_structure=[('var1', label_binarizer), (None, 0.), (None, 1.)],
+        bs = BatchShaper(x_structure=(('var1', label_binarizer), (None, 0.), (None, 1.)),
                          y_structure=('label', label_encoder),
                          data_sample=data)
         md = bs.metadata
@@ -258,7 +258,7 @@ class TestBatchShaper:
                 return data
 
         a = A()
-        bs = BatchShaper(x_structure=[('var1', label_binarizer), ('var1', a)],
+        bs = BatchShaper(x_structure=(('var1', label_binarizer), ('var1', a)),
                          y_structure=('label', label_encoder),
                          data_sample=data)
         shapes = bs.shape
@@ -283,7 +283,7 @@ class TestBatchShaper:
                 return data
 
         a = A()
-        bs = BatchShaper(x_structure=[('var1', label_binarizer), ('var1', a)],
+        bs = BatchShaper(x_structure=(('var1', label_binarizer), ('var1', a)),
                          y_structure=('label', label_encoder), data_sample=data)
         n_classes = bs.n_classes
         pass
@@ -291,14 +291,14 @@ class TestBatchShaper:
     def test_inverse_transform(self, data, label_binarizer, label_encoder):
         le2 = LabelEncoder().fit(data['var2'])
         bs = BatchShaper(x_structure=('var1', label_binarizer),
-                         y_structure=[('label', label_encoder), ('var2', le2)],
+                         y_structure=(('label', label_encoder), ('var2', le2)),
                          data_sample=data)
         batch = bs.transform(data)
         inverse = bs.inverse_transform(batch[1])
         assert inverse.equals(data[['label', 'var2']])
         # Check inverse transform when constant field is in the structure
         bs = BatchShaper(x_structure=('var1', label_binarizer),
-                         y_structure=[('label', label_encoder), ('var2', le2), (None, 0.)],
+                         y_structure=(('label', label_encoder), ('var2', le2), (None, 0.)),
                          data_sample=data)
         batch = bs.transform(data)
         # check that the constant field was added to the y output
@@ -309,7 +309,7 @@ class TestBatchShaper:
         assert inverse.equals(data[['label', 'var2']])
         # Check inverse transform when direct mapping field is in the structure
         bs = BatchShaper(x_structure=('var1', label_binarizer),
-                         y_structure=[('label', label_encoder), ('var2', le2), ('var1', None)],
+                         y_structure=(('label', label_encoder), ('var2', le2), ('var1', None)),
                          data_sample=data)
         batch = bs.transform(data)
         # check that the constant field was added to the y output
@@ -366,7 +366,7 @@ class TestBatchShaper:
         # check that data is not modified
         assert data.equals(data_snapshot)
         assert data_xy_fork.columns.nlevels == 2
-        bs = BatchShaper(x_structure=[('var1', label_binarizer), ('label', label_encoder)],
+        bs = BatchShaper(x_structure=(('var1', label_binarizer), ('label', label_encoder)),
                          y_structure=('label', label_encoder),
                          data_sample=data)
         tr = bs.transform(data_xy_fork)
@@ -384,7 +384,7 @@ class TestBatchShaper:
         batch_fork_01 = BatchFork(levels=(0, 1))
         data_01_fork = batch_fork_01.transform(data)
         assert data_01_fork.columns.nlevels == 2
-        bs = BatchShaper(x_structure=[('var1', label_binarizer), ('label', label_encoder)],
+        bs = BatchShaper(x_structure=(('var1', label_binarizer), ('label', label_encoder)),
                          y_structure=('label', label_encoder),
                          multiindex_xy_keys=(0, 1),
                          data_sample=data)

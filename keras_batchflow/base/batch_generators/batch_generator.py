@@ -17,12 +17,17 @@ class BatchGenerator:
     **Parameters:**
 
     - **data** - a *Pandas dataframe* containing a dataset with both x and y
-    - **x_structure** - *tuple* or *list of tuples* - a structure describing mapping of dataframe columns to
-        pre-fitted encoders and to keras model inputs. When model has multiple inputs, keras expects
-        a list of numpy arrays as model X's. Each tuple is a mapping of a dataframe column to a relevant encoder.
-        It has format `('column name', encoder)`. If encoder is None, the column values will be converted to numpy
-        array and passed unchanged. If `(None, value)` is used, a new constant of value = `value` will be added
-        to Batch generator's output.
+    - **x_structure** - *tuple* or *tuple of tuples* - a structure describing mapping of dataframe columns to
+        pre-fitted encoders and to keras model inputs. When model has a single input x_structure will look like
+        `x_structure=('column_name', encoder)`. When model has multiple inputs, keras expects a tuple of numpy arrays
+        as model X's. The structure will look like `x_structure=(('column_name1', encoder1), ('column_name2', encoder2)`
+        If encoder is None, the column values will be converted to numpy array and passed unchanged. If you want to
+        add a constant to inputs or outputs, you can add tuples with `column_name = None` and constant value instead
+        of encoder, like so: `(None, value)`.
+        **Example:** `x_structure=(('column_name1', encoder1), ('column_name2', None), (None, 1)` - values in
+        column_name1 are encoded by encoder1, values from column_name2 are passed through unchanged, the third column
+        in the x structure will be a constant of 1. So the batch could be
+        `(np.array(...), np.array(...), np.array(1, 1, ...))`
     - **y_structure** - (optional) *tuple* or *list of tuples* - a structure describing mapping of dataframe columns to
         pre-fitted encoders and to keras model output. When model has multiple output, keras expects
         a list of numpy arrays as model Y's. **Default: None**. Same rules and same format applies (see x_structure)
