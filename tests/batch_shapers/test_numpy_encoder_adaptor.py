@@ -29,7 +29,8 @@ class TestNumpyEncoderAdaptor:
         nea = NumpyEncoderAdaptor()
         tr = nea.transform(data)
         assert isinstance(tr, np.ndarray)
-        assert np.issubdtype(tr.dtype, object)
+        # this is for compatibility. Older versions of pandas 2.0.* for python 3.8 return Int64 as object dtype
+        assert np.issubdtype(tr.dtype, object) or np.issubdtype(tr.dtype, int)
 
     def test_transform_datetime(self):
         """

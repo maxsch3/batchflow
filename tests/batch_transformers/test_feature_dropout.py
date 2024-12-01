@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from scipy.stats import binom_test, chisquare
+from scipy.stats import binomtest, chisquare
 from keras_batchflow.base.batch_transformers import FeatureDropout
 
 
@@ -31,7 +31,7 @@ class TestFeatureDropout:
         fd = FeatureDropout([0.4, .6], 'var1', drop_values='')
         batch = fd.transform(self.df.sample(1000, replace=True))
         b = (batch['var1'] == '').sum()
-        assert binom_test(b, 1000, 0.6) > 0.01
+        assert binomtest(b, 1000, 0.6).pvalue > 0.01
 
     def test_cols_dist(self):
         sample_size = 1000
@@ -53,15 +53,15 @@ class TestFeatureDropout:
         fd = FeatureDropout([0., 1.], ['var1', 'var2', 'label'], drop_values=['v1', 'v2', 'v3'])
         batch = fd.transform(self.df.sample(1000, replace=True))
         b = (batch == 'v1').sum(axis=0)
-        assert binom_test(b[0], 1000, 0.33) > 0.01
+        assert binomtest(b[0], 1000, 0.33).pvalue > 0.01
         assert b[1] == 0
         assert b[2] == 0
         b = (batch == 'v2').sum(axis=0)
-        assert binom_test(b[1], 1000, 0.33) > 0.001
+        assert binomtest(b[1], 1000, 0.33).pvalue > 0.001
         assert b[0] == 0
         assert b[2] == 0
         b = (batch == 'v3').sum(axis=0)
-        assert binom_test(b[2], 1000, 0.33) > 0.001
+        assert binomtest(b[2], 1000, 0.33).pvalue > 0.001
         assert b[0] == 0
         assert b[1] == 0
 
