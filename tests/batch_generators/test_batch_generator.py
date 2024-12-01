@@ -173,14 +173,14 @@ class TestBatchGenerator:
         batch = bg.transform(self.df)
         assert type(batch) == tuple
         assert len(batch) == 2
-        assert type(batch[0]) == list
+        assert type(batch[0]) == tuple
         assert len(batch[0]) == 2
         assert type(batch[1]) == np.ndarray
         assert batch[1].shape == (8, 1)
         batch = bg.transform(self.df, return_y=False)
         assert isinstance(batch, tuple)
         assert len(batch) == 1
-        assert type(batch[0]) == list
+        assert type(batch[0]) == tuple
         assert len(batch[0]) == 2
 
     def test_inverse_transform(self):
@@ -222,7 +222,7 @@ class TestBatchGenerator:
         sh = bg.shapes
         assert type(sh) == tuple
         assert len(sh) == 2
-        assert type(sh[0]) == list
+        assert type(sh[0]) == tuple
         assert len(sh[0]) == 2
         assert sh[0][0] == (3,)
         assert sh[0][1] == (1,)

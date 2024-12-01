@@ -75,7 +75,7 @@ class TestBatchShaper:
         batch = bs.transform(data)
         assert type(batch) == tuple
         assert len(batch) == 2
-        assert type(batch[0]) == list
+        assert type(batch[0]) == tuple
         assert type(batch[1]) == np.ndarray
         assert len(batch[0]) == 2
         assert type(batch[0][0]) == np.ndarray
@@ -93,7 +93,7 @@ class TestBatchShaper:
         assert type(batch) == tuple
         assert len(batch) == 2
         assert type(batch[0]) == np.ndarray
-        assert type(batch[1]) == list
+        assert type(batch[1]) == tuple
         assert len(batch[1]) == 2
         assert type(batch[1][0]) == np.ndarray
         assert type(batch[1][1]) == np.ndarray
@@ -115,7 +115,7 @@ class TestBatchShaper:
         batch = batch_shaper.transform(data)
         assert isinstance(batch, tuple)
         assert len(batch) == 1
-        assert isinstance(batch[0], list)
+        assert isinstance(batch[0], tuple)
         assert len(batch[0]) == 2
 
 
@@ -152,7 +152,7 @@ class TestBatchShaper:
         batch = bs.transform(data)
         assert type(batch) == tuple
         assert len(batch) == 2
-        assert type(batch[0]) == list
+        assert type(batch[0]) == tuple
         assert len(batch[0]) == 2
         assert np.array_equal(batch[0][1], np.expand_dims(data['var2'].values, axis=-1))
 
@@ -163,7 +163,7 @@ class TestBatchShaper:
         batch = bs.transform(data)
         assert type(batch) == tuple
         assert len(batch) == 2
-        assert type(batch[0]) == list
+        assert type(batch[0]) == tuple
         assert len(batch[0]) == 2
         assert np.all(batch[0][1] == 0)
         assert batch[0][1].dtype == int
@@ -175,7 +175,7 @@ class TestBatchShaper:
         batch = bs.transform(data)
         assert type(batch) == tuple
         assert len(batch) == 2
-        assert type(batch[0]) == list
+        assert type(batch[0]) == tuple
         assert len(batch[0]) == 2
         assert np.all(batch[0][1] == 0)
         assert batch[0][1].dtype == float
@@ -187,7 +187,7 @@ class TestBatchShaper:
         batch = bs.transform(data)
         assert type(batch) == tuple
         assert len(batch) == 2
-        assert type(batch[0]) == list
+        assert type(batch[0]) == tuple
         assert len(batch[0]) == 2
         assert np.all(batch[0][1] == 'a')
         assert batch[0][1].dtype == '<U1'  # single unicode character
@@ -201,7 +201,7 @@ class TestBatchShaper:
         batch = bs.transform(data)
         assert type(md) is tuple
         assert len(md) == 2
-        assert type(md[0]) is list
+        assert type(md[0]) is tuple
         assert len(md[0]) == 2
         assert type(md[0][0]) == dict
         assert type(md[0][1]) == dict
@@ -234,7 +234,7 @@ class TestBatchShaper:
         md = bs.metadata
         assert type(md) is tuple
         assert len(md) == 2
-        assert type(md[0]) is list
+        assert type(md[0]) is tuple
         assert len(md[0]) == 3
         assert all([type(m) == dict for m in md[0]])
         assert md[0][1]['name'] == 'dummy_constant_0'
@@ -263,7 +263,7 @@ class TestBatchShaper:
                          data_sample=data)
         shapes = bs.shape
         assert type(shapes) == tuple
-        assert type(shapes[0]) == list
+        assert type(shapes[0]) == tuple
         assert len(shapes[0]) == 2
         assert shapes[0][0] == (3,)    # measured
         assert shapes[0][1] == (11,)   # direct from encoders's shape property
