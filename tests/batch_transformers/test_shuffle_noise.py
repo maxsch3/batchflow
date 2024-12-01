@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 import numpy as np
-from scipy.stats import binom_test, chisquare
+from scipy.stats import binomtest, chisquare
 from keras_batchflow.base.batch_transformers import ShuffleNoise
 
 
