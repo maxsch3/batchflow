@@ -83,7 +83,7 @@ class TestBatchGeneratorKeras:
 
     def test_multiple_inputs_outputs(self):
         keras_bg = BatchGenerator(self.data, x_structure=(('x1', None), ('x2', None)),
-                                  y_structure=[('y1', self.y1_enc), ('y2', self.y2_enc)])
+                                  y_structure=(('y1', self.y1_enc), ('y2', self.y2_enc)))
         inp1 = keras.layers.Input(shape=(1,))
         inp2 = keras.layers.Input(shape=(1,))
         x = keras.layers.Concatenate()([inp1, inp2])
