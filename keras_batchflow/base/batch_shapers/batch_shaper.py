@@ -71,9 +71,9 @@ class BatchShaper:
     def _shape_batch(self, data: pd.DataFrame, func, **kwargs):
         """
         This method forms a batch. Depending on the functions provided it can return different data shaped the same way:
-         - batch-shaped data for keras and tensorflow fit/predict, e.g. ([ndarray, ndarray], ndarray)
-         - component shapes structure, e.g. ([(None, 2), (None, 5)], (None, 2)) for the same example
-         - number of classes for categorical inputs, e.g. ([10, 3], 2)
+         - batch-shaped data for keras and tensorflow fit/predict, e.g. ((ndarray, ndarray), ndarray)
+         - component shapes structure, e.g. (((None, 2), (None, 5)), (None, 2)) for the same example
+         - number of classes for categorical inputs, e.g. ((10, 3), 2)
         :param data: pandas dataframe with the data
         :param func: a function defining the output (self._shape_func, self._transform_func, self._n_classes_func)
         :param kwargs:
@@ -98,10 +98,9 @@ class BatchShaper:
             return ret
         elif type(struc) in [list, tuple]:
             ret = [self._walk_structure(data, s, func, **kwargs) for s in struc]
-            if type(struc) is tuple:
-                return tuple(ret)
-            else:
-                return ret
+            # we always return lists as tuples as tensorflow wants x and y to be tuples in case of multiple
+            # components
+            return tuple(ret)
         else:
             raise ValueError('Error: structure definition in {} class only supports lists and tuples, but {}'
                              'was found'.format(type(self).__name__, type(struc)))
